@@ -1,0 +1,16 @@
+**/.DS_Store
+**/.gitignore
+.git
+.gitattributes
+.github
+.idea
+.gradle
+build
+.dockerignore
+docker
+examples
+Dockerfile
+gradlew.bat
+LICENSE
+README.md
+docker-compose.yml

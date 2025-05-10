@@ -1,0 +1,61 @@
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  nginx_network:
+  main_network:
+
+
+services:
+  nginx:
+    image: nginx:stable-alpine
+    restart: always
+    working_dir: /app
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - nginx_network
+    depends_on:
+      - spring
+    container_name: nginx_news_aggregator
+
+  spring:
+    build:
+      context: .
+    restart: always
+    expose:
+      - 8080
+    env_file:
+      - ./docker/.env
+    networks:
+      - nginx_network
+      - main_network
+    depends_on:
+      - postgres
+      - redis
+    command: java -Xmx512m -Xms512m -jar app.jar
+    container_name: spring_news_aggregator
+
+  postgres:
+    image: postgres:alpine
+    restart: always
+    env_file:
+      - ./docker/.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    networks:
+      - main_network
+    container_name: postgres_news_aggregator
+
+  redis:
+    image: redis:alpine
+    restart: always
+    volumes:
+      - redis_data:/data/
+      - ./docker/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - main_network
+    container_name: redis_news_aggregator
