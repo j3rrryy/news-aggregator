@@ -5,7 +5,7 @@ CREATE TYPE source AS ENUM('RT_RU', 'AIF_RU', 'SVPRESSA_RU');
 CREATE TABLE news_articles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(300) NOT NULL,
-    summary VARCHAR(500) NOT NULL,
+    summary TEXT NOT NULL,
     content TEXT NOT NULL,
     category category NOT NULL,
     url TEXT NOT NULL UNIQUE,

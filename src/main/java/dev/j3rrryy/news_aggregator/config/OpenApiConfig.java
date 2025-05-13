@@ -12,7 +12,7 @@ public class OpenApiConfig {
     public OpenAPI defineOpenAPI() {
         Info info = new Info()
                 .title("News Aggregator")
-                .version("v0.1.0")
+                .version("v1.0.0")
                 .description("API for news collection and analytics");
         return new OpenAPI().info(info);
     }

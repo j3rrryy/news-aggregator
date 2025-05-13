@@ -1,5 +1,6 @@
 package dev.j3rrryy.news_aggregator.parser;
 
+import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -25,17 +27,21 @@ public class RtRuParser extends NewsParser {
     private static final String URL_TEMPLATE = """
             https://russian.rt.com/listing/type.ArticleVideoGallery.trend.%s/prepare/all-trends-new/5000/0
             """;
-    private static final Map<Category, List<String>> urlMap = Map.of(
-            Category.POLITICS, List.of("5835d35ec46188a6798b493b", "58357206c46188dc658b45ad"),
-            Category.ECONOMICS, List.of(
+    private static final String CONTENT_SELECTOR = """
+            div.article__text > p, div.article__text > h1, div.article__text > h2, div.article__text > h3,
+            div.article__text > h4, div.article__text > h5, div.article__text > h6, div.article__text > blockquote
+            """;
+    private static final Map<Category, Set<String>> urlMap = Map.of(
+            Category.POLITICS, Set.of("5835d35ec46188a6798b493b", "58357206c46188dc658b45ad"),
+            Category.ECONOMICS, Set.of(
                     "583573b2c46188a1658b45f7",
                     "58357264c461889e658b458e",
                     "58357896c461889f658b46a1",
                     "58358324c46188a2658b47c0",
                     "58358088c46188a1658b4704"
             ),
-            Category.SOCIETY, List.of("583585fac461889d658b484c"),
-            Category.SPORT, List.of(
+            Category.SOCIETY, Set.of("583585fac461889d658b484c"),
+            Category.SPORT, Set.of(
                     "58356b4bc36188f34f8b48b6",
                     "58356befc46188991b8b47b1",
                     "58356e86c461884d4d8b4599",
@@ -45,7 +51,7 @@ public class RtRuParser extends NewsParser {
                     "58358911c4618866648b4589",
                     "58380405c46188046c8b46c7"
             ),
-            Category.SCIENCE_TECH, List.of(
+            Category.SCIENCE_TECH, Set.of(
                     "5d83432e02e8bd4e656e7f47",
                     "5835934dc4618894648b491a",
                     "58359464c461888a648b4835",
@@ -63,33 +69,30 @@ public class RtRuParser extends NewsParser {
 
     @Autowired
     public RtRuParser(ExecutorService ioExecutor, ExecutorService cpuExecutor, NewsArticleRepository newsArticleRepository) {
-        super(URL_TEMPLATE, urlMap, ioExecutor, cpuExecutor, newsArticleRepository);
+        super(ioExecutor, RateLimiter.create(30), cpuExecutor, newsArticleRepository);
     }
 
     @Override
-    protected List<String> getPageUrls(Document doc, Category category) {
-        Optional<LocalDateTime> latestPublishedAt = getLatestPublishedAt(category, Source.RT_RU);
-        Elements newsArticles = doc.select("li.listing__column");
-        List<String> urls = new ArrayList<>();
+    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
+        log.info("Parsing news from rt.ru...");
+        for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
+            Category category = entry.getKey();
+            LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
 
-        for (Element article : newsArticles) {
-            try {
-                String url = Objects.requireNonNull(article.selectFirst("a.link.link_color"))
-                        .absUrl("href");
-                String publishedAtAttr = Objects.requireNonNull(article.selectFirst("time.date"))
-                        .attr("datetime");
-                LocalDateTime publishedAt = LocalDateTime.parse(publishedAtAttr, dateTimeFormatter);
+            Set<String> articleUrls = entry.getValue().stream()
+                    .map(URL_TEMPLATE::formatted)
+                    .map(pageUrl -> CompletableFuture
+                            .supplyAsync(() -> downloadPage(fetchGet(pageUrl), pageUrl), ioExecutor))
+                    .map(optPage -> optPage.thenApply(opt -> opt
+                            .map(page -> getPageUrls(page, latestPublishedAt))
+                            .orElseGet(Set::of)))
+                    .flatMap(futSet -> futSet.thenApply(Set::stream).join())
+                    .collect(Collectors.toSet());
 
-                if (latestPublishedAt.isPresent() && !publishedAt.isAfter(latestPublishedAt.get())) {
-                    break;
-                }
-                urls.add(url);
-            } catch (Exception ignored) {
-            }
+            int saved = fetchAndSaveArticles(articleUrls, category, latestPublishedAt);
+            log.info("Saved {} new articles from {}", saved, category.name());
         }
-
-        log.info("Found {} new articles from {}", urls.size(), category.name());
-        return urls;
+        log.info("Parsing from rt.ru completed");
     }
 
     @Override
@@ -102,10 +105,7 @@ public class RtRuParser extends NewsParser {
                     .replaceFirst("^(.*?[.!?]).*", "$1")
                     .trim();
             String content = Objects.requireNonNull(doc.selectFirst("div.article__summary")).text()
-                    + Optional.ofNullable(doc.selectFirst("div.article__text"))
-                    .map(Element::text)
-                    .map(text -> " " + text)
-                    .orElse("");
+                    + "\n\n" + doc.select(CONTENT_SELECTOR).text();
             Set<String> keywords = doc.select("a.tags-trends__link").stream()
                     .map(Element::text)
                     .collect(Collectors.toSet());
@@ -135,6 +135,26 @@ public class RtRuParser extends NewsParser {
             log.debug("Skipping invalid article {}", doc.location());
             return Optional.empty();
         }
+    }
+
+    private Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
+        Elements newsArticles = doc.select("li.listing__column");
+        Set<String> urls = new HashSet<>();
+
+        for (Element article : newsArticles) {
+            try {
+                String url = Objects.requireNonNull(article.selectFirst("a.link"))
+                        .absUrl("href");
+                String publishedAtAttr = Objects.requireNonNull(article.selectFirst("time.date"))
+                        .attr("datetime");
+                LocalDateTime publishedAt = LocalDateTime.parse(publishedAtAttr, dateTimeFormatter);
+
+                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
+                urls.add(url);
+            } catch (Exception ignored) {
+            }
+        }
+        return urls;
     }
 
 }

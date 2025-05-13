@@ -1,20 +1,20 @@
 package dev.j3rrryy.news_aggregator.parser;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
-import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -46,53 +46,87 @@ public abstract class NewsParser {
             "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
     );
     private static final Semaphore ioSemaphore = new Semaphore(50);
-    private static final RateLimiter rateLimiter = RateLimiter.create(20);
     private static final int BATCH_SIZE = 500;
 
-    private final String URL_TEMPLATE;
-    private final Map<Category, List<String>> urlMap;
-    private final AtomicInteger userAgentIndex = new AtomicInteger(0);
-    private final ExecutorService ioExecutor;
+    protected final ExecutorService ioExecutor;
+    private final RateLimiter rateLimiter;
     private final ExecutorService cpuExecutor;
     private final NewsArticleRepository newsArticleRepository;
+    private final AtomicInteger userAgentIndex = new AtomicInteger(0);
 
-    protected abstract List<String> getPageUrls(Document doc, Category category);
+    public abstract void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory);
 
     protected abstract Optional<NewsArticle> parseNewsArticle(Document doc, Category category);
 
-    protected Optional<LocalDateTime> getLatestPublishedAt(Category category, Source source) {
-        return newsArticleRepository.findLatestPublishedAtByCategorySource(category, source);
-    }
-
-    protected String getNextUserAgent() {
-        int index = userAgentIndex.getAndUpdate(i -> (i + 1) % userAgents.size());
-        return userAgents.get(index);
-    }
-
-    protected Optional<Document> downloadPage(String url) {
+    protected Optional<Document> downloadPage(Callable<Document> pageLoader, String urlForLog) {
         if (Thread.interrupted()) return Optional.empty();
         try {
             ioSemaphore.acquire();
             rateLimiter.acquire();
-            Document doc = Jsoup.connect(url)
-                    .userAgent(getNextUserAgent())
-                    .headers(headers)
-                    .timeout(120_000)
-                    .ignoreHttpErrors(true)
-                    .get();
+            Document doc = pageLoader.call();
             return Optional.of(doc);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return Optional.empty();
         } catch (Exception e) {
-            log.warn("Download from {} failed: {}", url.trim(), e.getMessage());
+            log.warn("Download from {} failed: {}", urlForLog.trim(), e.getMessage());
             return Optional.empty();
         } finally {
             ioSemaphore.release();
         }
     }
 
-    protected int saveIgnoringDuplicates(List<NewsArticle> articles) {
+    protected Callable<Document> fetchGet(String url) {
+        return () -> Jsoup.connect(url)
+                .userAgent(getNextUserAgent())
+                .headers(headers)
+                .timeout(120_000)
+                .get();
+    }
+
+    protected Callable<Document> fetchPost(String url, String body) {
+        return () -> {
+            String json = Jsoup.connect(url)
+                    .userAgent(getNextUserAgent())
+                    .headers(headers)
+                    .timeout(120_000)
+                    .header("X-Requested-With", "XMLHttpRequest")
+                    .method(Connection.Method.POST)
+                    .requestBody(body)
+                    .ignoreContentType(true)
+                    .execute()
+                    .body();
+
+            String html = new ObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {
+                    })
+                    .get("data")
+                    .toString();
+            return Jsoup.parse(html);
+        };
+    }
+
+    protected int fetchAndSaveArticles(Set<String> articleUrls, Category category, LocalDateTime latestPublishedAt) {
+        Set<CompletableFuture<Optional<NewsArticle>>> articleFutures = articleUrls.stream()
+                .map(articleUrl -> CompletableFuture
+                        .supplyAsync(() -> downloadPage(fetchGet(articleUrl), articleUrl), ioExecutor)
+                        .thenApplyAsync(optDoc -> optDoc
+                                .flatMap(doc -> parseNewsArticle(doc, category)), cpuExecutor))
+                .collect(Collectors.toSet());
+
+        CompletableFuture.allOf(articleFutures.toArray(CompletableFuture[]::new)).join();
+        return articleFutures.stream()
+                .map(CompletableFuture::join)
+                .flatMap(Optional::stream)
+                .filter(n -> latestPublishedAt == null || n.getPublishedAt().isAfter(latestPublishedAt))
+                .collect(Collectors.collectingAndThen(Collectors.toSet(), this::saveIgnoringDuplicates));
+    }
+
+    private String getNextUserAgent() {
+        int index = userAgentIndex.getAndUpdate(i -> (i + 1) % userAgents.size());
+        return userAgents.get(index);
+    }
+
+    private int saveIgnoringDuplicates(Set<NewsArticle> articles) {
         if (articles.isEmpty()) {
             return 0;
         }
@@ -124,34 +158,6 @@ public abstract class NewsParser {
             totalSaved += batch.size();
         }
         return totalSaved;
-    }
-
-
-    public void parse() {
-        for (Map.Entry<Category, List<String>> entry : urlMap.entrySet()) {
-            Category category = entry.getKey();
-
-            List<CompletableFuture<Optional<NewsArticle>>> articleFutures = entry.getValue().stream()
-                    .map(URL_TEMPLATE::formatted)
-                    .map(pageUrl -> CompletableFuture.supplyAsync(() -> downloadPage(pageUrl), ioExecutor))
-                    .map(optPage -> optPage.thenApply(opt -> opt
-                            .map(page -> getPageUrls(page, category))
-                            .orElseGet(List::of)))
-                    .flatMap(futList -> futList.thenApply(List::stream).join())
-                    .map(articleUrl -> CompletableFuture
-                            .supplyAsync(() -> downloadPage(articleUrl), ioExecutor)
-                            .thenApplyAsync(optDoc -> optDoc.flatMap(d -> parseNewsArticle(d, category)), cpuExecutor))
-                    .toList();
-
-            CompletableFuture<Void> all = CompletableFuture.allOf(articleFutures.toArray(CompletableFuture[]::new));
-            all.join();
-
-            int saved = articleFutures.stream()
-                    .map(CompletableFuture::join)
-                    .flatMap(Optional::stream)
-                    .collect(Collectors.collectingAndThen(Collectors.toList(), this::saveIgnoringDuplicates));
-            log.info("Saved {} new articles from {}", saved, category.name());
-        }
     }
 
 }

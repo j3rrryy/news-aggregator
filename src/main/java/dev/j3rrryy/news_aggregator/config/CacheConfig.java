@@ -7,8 +7,6 @@ import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 @Configuration
 public class CacheConfig {
@@ -18,16 +16,7 @@ public class CacheConfig {
         RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofHours(1))
                 .disableCachingNullValues();
-
-        Map<String, RedisCacheConfiguration> cacheConfigs = new HashMap<>();
-        cacheConfigs.put("latestPublishedAt",
-                RedisCacheConfiguration.defaultCacheConfig().entryTtl(Duration.ofMinutes(5))
-        );
-
-        return RedisCacheManager.builder(factory)
-                .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(cacheConfigs)
-                .build();
+        return RedisCacheManager.builder(factory).cacheDefaults(defaultConfig).build();
     }
 
 }
