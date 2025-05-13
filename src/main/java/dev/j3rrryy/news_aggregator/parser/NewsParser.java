@@ -45,6 +45,7 @@ public abstract class NewsParser {
             "Upgrade-Insecure-Requests", "1",
             "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
     );
+    private static final AtomicInteger userAgentIndex = new AtomicInteger(0);
     private static final Semaphore ioSemaphore = new Semaphore(50);
     private static final int BATCH_SIZE = 500;
 
@@ -52,7 +53,6 @@ public abstract class NewsParser {
     private final RateLimiter rateLimiter;
     private final ExecutorService cpuExecutor;
     private final NewsArticleRepository newsArticleRepository;
-    private final AtomicInteger userAgentIndex = new AtomicInteger(0);
 
     public abstract void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory);
 

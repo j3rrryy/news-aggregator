@@ -81,13 +81,13 @@ public class AifRuParser extends NewsParser {
                     int startPage = fetchedPages + 1;
                     int endPage = fetchedPages + 10;
 
-                    Set<CompletableFuture<Optional<Document>>> pageFutures = IntStream
+                    List<CompletableFuture<Optional<Document>>> pageFutures = IntStream
                             .rangeClosed(startPage, endPage)
                             .mapToObj(page -> CompletableFuture.supplyAsync(
                                     () -> downloadPage(fetchPost(baseUrl, BODY_TEMPLATE.formatted(page)), baseUrl),
                                     ioExecutor
                             ))
-                            .collect(Collectors.toSet());
+                            .toList();
 
                     CompletableFuture.allOf(pageFutures.toArray(CompletableFuture[]::new)).join();
 
