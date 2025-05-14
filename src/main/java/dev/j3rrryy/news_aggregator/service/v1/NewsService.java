@@ -28,20 +28,20 @@ public class NewsService {
 
     public void startParsing() {
         if (!isParsing.compareAndSet(false, true)) {
-            throw new ParsingInProgressException("Parsing is already in progress");
+            throw new ParsingInProgressException();
         }
 
         try {
             newsArticleRepository.updateAllNewToActive();
             Map<Source, Map<Category, LocalDateTime>> publishedAt = getLatestPublishedAtByCategoryAndSource();
 
-            if (parserService.listAll().RT_RU()) {
+            if (parserService.getSourceStatus().RT_RU()) {
                 rtRuParser.parse(publishedAt.get(Source.RT_RU));
             }
-            if (parserService.listAll().AIF_RU()) {
+            if (parserService.getSourceStatus().AIF_RU()) {
                 aifRuParser.parse(publishedAt.get(Source.AIF_RU));
             }
-            if (parserService.listAll().SVPRESSA_RU()) {
+            if (parserService.getSourceStatus().SVPRESSA_RU()) {
                 svpressaRuParser.parse(publishedAt.get(Source.SVPRESSA_RU));
             }
         } finally {

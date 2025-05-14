@@ -127,17 +127,12 @@ public abstract class NewsParser {
     }
 
     private int saveIgnoringDuplicates(Set<NewsArticle> articles) {
-        if (articles.isEmpty()) {
-            return 0;
-        }
-
+        if (articles.isEmpty()) return 0;
         Set<String> inputUrls = articles.stream()
                 .map(NewsArticle::getUrl)
                 .collect(Collectors.toSet());
 
-        if (inputUrls.isEmpty()) {
-            return 0;
-        }
+        if (inputUrls.isEmpty()) return 0;
 
         Set<String> existingUrls = newsArticleRepository.findExistingUrls(inputUrls);
         Map<String, NewsArticle> uniqueArticles = articles.stream()

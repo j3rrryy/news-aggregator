@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 @ResponseStatus(HttpStatus.CONFLICT)
 public class ParsingInProgressException extends RuntimeException {
 
-    public ParsingInProgressException(String message) {
-        super(message);
+    public ParsingInProgressException() {
+        super("Parsing is already in progress");
     }
 
 }
