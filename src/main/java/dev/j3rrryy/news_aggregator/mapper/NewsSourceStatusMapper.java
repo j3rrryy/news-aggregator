@@ -11,11 +11,11 @@ import java.util.Map;
 public class NewsSourceStatusMapper {
 
     public void updateStatusMap(NewsSourceStatusRequestDto requestDto, Map<Source, Boolean> statusMap) {
-        if (requestDto.RT_RU() != null) statusMap.put(Source.RT_RU, requestDto.RT_RU());
-        if (requestDto.AIF_RU() != null) statusMap.put(Source.AIF_RU, requestDto.AIF_RU());
-        if (requestDto.SVPRESSA_RU() != null) statusMap.put(Source.SVPRESSA_RU, requestDto.SVPRESSA_RU());
+        if (requestDto.rtRu() != null) statusMap.put(Source.RT_RU, requestDto.rtRu());
+        if (requestDto.aifRu() != null) statusMap.put(Source.AIF_RU, requestDto.aifRu());
+        if (requestDto.svpressaRu() != null) statusMap.put(Source.SVPRESSA_RU, requestDto.svpressaRu());
     }
-    
+
     public NewsSourceStatusResponseDto toResponseDto(Map<Source, Boolean> statusMap) {
         return new NewsSourceStatusResponseDto(
                 statusMap.getOrDefault(Source.RT_RU, false),

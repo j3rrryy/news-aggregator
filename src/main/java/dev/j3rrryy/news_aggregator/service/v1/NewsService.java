@@ -35,13 +35,13 @@ public class NewsService {
             newsArticleRepository.updateAllNewToActive();
             Map<Source, Map<Category, LocalDateTime>> publishedAt = getLatestPublishedAtByCategoryAndSource();
 
-            if (parserService.getSourceStatus().RT_RU()) {
+            if (parserService.getSourceStatus().rtRu()) {
                 rtRuParser.parse(publishedAt.get(Source.RT_RU));
             }
-            if (parserService.getSourceStatus().AIF_RU()) {
+            if (parserService.getSourceStatus().aifRu()) {
                 aifRuParser.parse(publishedAt.get(Source.AIF_RU));
             }
-            if (parserService.getSourceStatus().SVPRESSA_RU()) {
+            if (parserService.getSourceStatus().svpressaRu()) {
                 svpressaRuParser.parse(publishedAt.get(Source.SVPRESSA_RU));
             }
         } finally {
