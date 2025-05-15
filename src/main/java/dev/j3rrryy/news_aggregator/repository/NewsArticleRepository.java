@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -28,5 +29,20 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID> 
 
     @Query("SELECT url FROM NewsArticle WHERE status != 'DELETED' AND url IN :urls")
     Set<String> findExistingUrls(@Param("urls") Set<String> urls);
+
+    @Modifying
+    @Transactional
+    @Query("UPDATE NewsArticle SET status = 'DELETED' WHERE publishedAt < :olderThan AND status <> 'DELETED'")
+    int markAsDeletedByPublishedAtBefore(@Param("olderThan") LocalDateTime olderThan);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM NewsArticle WHERE status = 'DELETED'")
+    int deleteAllMarkedAsDeleted();
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM NewsArticle")
+    int deleteAllArticles();
 
 }

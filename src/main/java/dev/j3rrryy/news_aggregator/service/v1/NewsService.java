@@ -1,5 +1,7 @@
 package dev.j3rrryy.news_aggregator.service.v1;
 
+import dev.j3rrryy.news_aggregator.dto.request.MarkDeletedDto;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffectedDto;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
@@ -8,6 +10,7 @@ import dev.j3rrryy.news_aggregator.parser.RtRuParser;
 import dev.j3rrryy.news_aggregator.parser.SvpressaRuParser;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,7 +29,8 @@ public class NewsService {
     private final SvpressaRuParser svpressaRuParser;
     private final NewsArticleRepository newsArticleRepository;
 
-    public void startParsing() {
+    @Async
+    public void startParsingAsync() {
         if (!isParsing.compareAndSet(false, true)) {
             throw new ParsingInProgressException();
         }
@@ -35,18 +39,32 @@ public class NewsService {
             newsArticleRepository.updateAllNewToActive();
             Map<Source, Map<Category, LocalDateTime>> publishedAt = getLatestPublishedAtByCategoryAndSource();
 
-            if (parserService.getSourceStatus().rtRu()) {
+            if (parserService.getSourceStatuses().rtRu()) {
                 rtRuParser.parse(publishedAt.get(Source.RT_RU));
             }
-            if (parserService.getSourceStatus().aifRu()) {
+            if (parserService.getSourceStatuses().aifRu()) {
                 aifRuParser.parse(publishedAt.get(Source.AIF_RU));
             }
-            if (parserService.getSourceStatus().svpressaRu()) {
+            if (parserService.getSourceStatuses().svpressaRu()) {
                 svpressaRuParser.parse(publishedAt.get(Source.SVPRESSA_RU));
             }
         } finally {
             isParsing.set(false);
         }
+    }
+
+    public ArticlesAffectedDto markAsDeleted(MarkDeletedDto markDeletedDto) {
+        return new ArticlesAffectedDto(
+                newsArticleRepository.markAsDeletedByPublishedAtBefore(markDeletedDto.olderThan())
+        );
+    }
+
+    public ArticlesAffectedDto deleteMarkedArticles() {
+        return new ArticlesAffectedDto(newsArticleRepository.deleteAllMarkedAsDeleted());
+    }
+
+    public ArticlesAffectedDto deleteAllArticles() {
+        return new ArticlesAffectedDto(newsArticleRepository.deleteAllArticles());
     }
 
     private Map<Source, Map<Category, LocalDateTime>> getLatestPublishedAtByCategoryAndSource() {

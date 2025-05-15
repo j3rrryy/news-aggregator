@@ -57,7 +57,7 @@ public class ParsingScheduler {
 
     private void autoParsing() {
         try {
-            newsService.startParsing();
+            newsService.startParsingAsync();
         } catch (ParsingInProgressException e) {
             log.warn(e.getMessage());
         }

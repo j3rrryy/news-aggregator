@@ -26,6 +26,6 @@ public class ParserProperties {
     @JsonDeserialize(using = DurationDeserializer.class)
     private Duration autoParsingInterval;
 
-    private Map<Source, Boolean> sourceStatus = new EnumMap<>(Source.class);
+    private Map<Source, Boolean> sourceStatuses = new EnumMap<>(Source.class);
 
 }
