@@ -107,25 +107,33 @@ public class SvpressaRuParser extends NewsParser {
     protected Optional<NewsArticle> parseNewsArticle(Document doc, Category category) {
         try {
             String title = Objects.requireNonNull(doc.selectFirst("h1.b-text__title"))
-                    .text();
+                    .text()
+                    .trim();
             String summary = Objects.requireNonNull(doc.selectFirst("div.b-text__block > p"))
                     .text()
-                    .replaceFirst("^(.*?[.!?]).*", "$1")
-                    .trim();
+                    .trim()
+                    .replaceFirst("^(.*?[.!?]).*", "$1");
             String content = doc.select("div.b-text__block > p").stream()
                     .map(Element::text)
+                    .map(String::trim)
+                    .filter(text -> !text.isEmpty())
                     .collect(Collectors.joining("\n\n"));
             Set<String> keywords = doc.select("a.b-tag__link").stream()
                     .map(Element::text)
+                    .map(String::trim)
+                    .filter(text -> !text.isEmpty())
                     .map(kw -> kw.substring(1))
+                    .map(kw -> Character.toUpperCase(kw.charAt(0)) + kw.substring(1))
                     .collect(Collectors.toSet());
             Set<String> mediaUrls = doc.select("div.b-text__img img").stream()
                     .map(media -> media.absUrl("src"))
+                    .filter(text -> !text.isEmpty())
                     .collect(Collectors.toSet());
             String url = doc.location();
 
             String publishedAtText = Objects.requireNonNull(doc.selectFirst("div.b-text__date"))
-                    .text();
+                    .text()
+                    .trim();
             LocalDateTime publishedAt = parsePublishedAtArticle(publishedAtText);
 
             NewsArticle newsArticle = NewsArticle.builder()
@@ -156,7 +164,8 @@ public class SvpressaRuParser extends NewsParser {
                 String url = Objects.requireNonNull(article.selectFirst("a.b-article__title"))
                         .absUrl("href");
                 String publishedAtText = Objects.requireNonNull(article.selectFirst("div.b-article__date"))
-                        .text();
+                        .text()
+                        .trim();
                 LocalDate publishedAt = parsePublishedAtPage(publishedAtText);
 
                 if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt.toLocalDate())) break;
@@ -168,7 +177,7 @@ public class SvpressaRuParser extends NewsParser {
     }
 
     private LocalDate parsePublishedAtPage(String text) {
-        String[] parts = text.trim().split("\\s+");
+        String[] parts = text.split("\\s+");
 
         int day = Integer.parseInt(parts[0]);
         Integer month = monthMap.get(parts[1].toLowerCase());
@@ -183,7 +192,7 @@ public class SvpressaRuParser extends NewsParser {
     }
 
     private LocalDateTime parsePublishedAtArticle(String text) {
-        String[] parts = text.trim().split("\\s+");
+        String[] parts = text.split("\\s+");
 
         int day = Integer.parseInt(parts[0]);
         Integer month = monthMap.get(parts[1].toLowerCase());

@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 public record MarkDeletedDto(
         @NotNull(message = "Timestamp must be provided")
-        @PastOrPresent(message = "Timestamp must be a past or present")
+        @PastOrPresent(message = "Timestamp must be in the past or present")
         LocalDateTime olderThan
 ) {
 

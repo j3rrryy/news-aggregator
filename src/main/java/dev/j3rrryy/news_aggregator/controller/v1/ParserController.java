@@ -50,7 +50,7 @@ public class ParserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Source statuses updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid source")
+            @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
     public void patchSourceStatuses(@RequestBody NewsSourceStatusesRequestDto newsSourceStatusesRequestDto) {
         parserService.patchSourceStatuses(newsSourceStatusesRequestDto);
@@ -80,9 +80,9 @@ public class ParserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Interval updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid duration format")
+            @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public void setAutoParsingInterval(@Valid @RequestBody AutoParsingIntervalDto autoParsingIntervalDto) {
+    public void setAutoParsingInterval(@RequestBody @Valid AutoParsingIntervalDto autoParsingIntervalDto) {
         parserService.setAutoParsingInterval(autoParsingIntervalDto);
     }
 

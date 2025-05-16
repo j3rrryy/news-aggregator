@@ -132,24 +132,32 @@ public class AifRuParser extends NewsParser {
     protected Optional<NewsArticle> parseNewsArticle(Document doc, Category category) {
         try {
             String title = Objects.requireNonNull(doc.selectFirst("h1[itemprop=headline]"))
-                    .text();
+                    .text()
+                    .trim();
             String summary = Objects.requireNonNull(doc.selectFirst(SUMMARY_AND_CONTENT_SELECTOR))
                     .text()
-                    .replaceFirst("^(.*?[.!?]).*", "$1")
-                    .trim();
+                    .trim()
+                    .replaceFirst("^(.*?[.!?]).*", "$1");
             String content = doc.select(SUMMARY_AND_CONTENT_SELECTOR).stream()
                     .map(Element::text)
+                    .map(String::trim)
+                    .filter(text -> !text.isEmpty())
                     .collect(Collectors.joining("\n\n"));
             Set<String> keywords = doc.select("span[itemprop=keywords]").stream()
                     .map(Element::text)
+                    .map(String::trim)
+                    .filter(text -> !text.isEmpty())
+                    .map(kw -> Character.toUpperCase(kw.charAt(0)) + kw.substring(1))
                     .collect(Collectors.toSet());
             Set<String> mediaUrls = doc.select("img[itemprop=image]").stream()
                     .map(media -> media.absUrl("src"))
+                    .filter(text -> !text.isEmpty())
                     .collect(Collectors.toSet());
             String url = doc.location();
 
             String publishedAtText = Objects.requireNonNull(doc.selectFirst("time[itemprop=datePublished]"))
-                    .text();
+                    .text()
+                    .trim();
             LocalDateTime publishedAt = parsePublishedAt(publishedAtText);
 
             NewsArticle newsArticle = NewsArticle.builder()
@@ -180,7 +188,8 @@ public class AifRuParser extends NewsParser {
                 String url = Objects.requireNonNull(article.selectFirst("div.box_info a"))
                         .absUrl("href");
                 String publishedAtText = Objects.requireNonNull(article.selectFirst("span.text_box__date"))
-                        .text();
+                        .text()
+                        .trim();
                 LocalDateTime publishedAt = parsePublishedAt(publishedAtText);
 
                 if (!publishedAt.isSupported(ChronoField.YEAR))

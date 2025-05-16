@@ -99,18 +99,28 @@ public class RtRuParser extends NewsParser {
     protected Optional<NewsArticle> parseNewsArticle(Document doc, Category category) {
         try {
             String title = Objects.requireNonNull(doc.selectFirst("h1.article__heading"))
-                    .text();
+                    .text()
+                    .trim();
             String summary = Objects.requireNonNull(doc.selectFirst("div.article__summary"))
                     .text()
-                    .replaceFirst("^(.*?[.!?]).*", "$1")
-                    .trim();
-            String content = Objects.requireNonNull(doc.selectFirst("div.article__summary")).text()
-                    + "\n\n" + doc.select(CONTENT_SELECTOR).text();
+                    .trim()
+                    .replaceFirst("^(.*?[.!?]).*", "$1");
+            String content = Objects.requireNonNull(doc.selectFirst("div.article__summary")).text().trim()
+                    + "\n\n"
+                    + doc.select(CONTENT_SELECTOR).stream()
+                    .map(Element::text)
+                    .map(String::trim)
+                    .filter(text -> !text.isEmpty())
+                    .collect(Collectors.joining("\n\n"));
             Set<String> keywords = doc.select("a.tags-trends__link").stream()
                     .map(Element::text)
+                    .map(String::trim)
+                    .filter(text -> !text.isEmpty())
+                    .map(kw -> Character.toUpperCase(kw.charAt(0)) + kw.substring(1))
                     .collect(Collectors.toSet());
             Set<String> mediaUrls = doc.select("img.article__cover-image").stream()
                     .map(media -> media.absUrl("src"))
+                    .filter(text -> !text.isEmpty())
                     .collect(Collectors.toSet());
             String url = doc.location();
 

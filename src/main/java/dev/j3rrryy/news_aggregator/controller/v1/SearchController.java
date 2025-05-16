@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/v1/search")
 @RequiredArgsConstructor
+@RequestMapping("/v1/search")
 @Tag(name = "Search", description = "Endpoints for searching, filtering and viewing news articles")
 public class SearchController {
 

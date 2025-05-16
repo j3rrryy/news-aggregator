@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/articles")
 @RequiredArgsConstructor
+@RequestMapping("/v1/articles")
 @Tag(name = "Articles", description = "Endpoints for managing news articles")
 public class ArticlesController {
 
@@ -28,13 +28,9 @@ public class ArticlesController {
     @PutMapping("/mark-deleted")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "News articles marked as 'deleted' successfully"),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid timestamp format",
-                    content = @io.swagger.v3.oas.annotations.media.Content()
-            )
+            @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public ArticlesAffectedDto markAsDeleted(@Valid @RequestBody MarkDeletedDto markDeletedDto) {
+    public ArticlesAffectedDto markAsDeleted(@RequestBody @Valid MarkDeletedDto markDeletedDto) {
         return articlesService.markAsDeleted(markDeletedDto);
     }
 
