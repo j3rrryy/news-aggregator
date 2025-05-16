@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/v1/analytics")
-@Tag(name = "Analytics", description = "News analytics")
+@Tag(name = "Analytics", description = "Endpoints for retrieving statistics and trending topics from the news articles")
 public class AnalyticsController {
 
 }

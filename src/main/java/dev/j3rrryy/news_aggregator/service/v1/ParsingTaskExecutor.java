@@ -1,10 +1,8 @@
 package dev.j3rrryy.news_aggregator.service.v1;
 
-import dev.j3rrryy.news_aggregator.dto.request.MarkDeletedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffectedDto;
+import dev.j3rrryy.news_aggregator.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
-import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
 import dev.j3rrryy.news_aggregator.parser.AifRuParser;
 import dev.j3rrryy.news_aggregator.parser.RtRuParser;
 import dev.j3rrryy.news_aggregator.parser.SvpressaRuParser;
@@ -19,52 +17,33 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
-public class NewsService {
-
-    private static final AtomicBoolean isParsing = new AtomicBoolean(false);
+public class ParsingTaskExecutor {
 
     private final RtRuParser rtRuParser;
     private final AifRuParser aifRuParser;
-    private final ParserService parserService;
     private final SvpressaRuParser svpressaRuParser;
+    private final ParserProperties parserProperties;
     private final NewsArticleRepository newsArticleRepository;
 
     @Async
-    public void startParsingAsync() {
-        if (!isParsing.compareAndSet(false, true)) {
-            throw new ParsingInProgressException();
-        }
-
+    public void asyncParsingTask(AtomicBoolean parsingInProgress) {
         try {
             newsArticleRepository.updateAllNewToActive();
             Map<Source, Map<Category, LocalDateTime>> publishedAt = getLatestPublishedAtByCategoryAndSource();
+            Map<Source, Boolean> sourceStatuses = parserProperties.getSourceStatuses();
 
-            if (parserService.getSourceStatuses().rtRu()) {
+            if (sourceStatuses.get(Source.RT_RU)) {
                 rtRuParser.parse(publishedAt.get(Source.RT_RU));
             }
-            if (parserService.getSourceStatuses().aifRu()) {
+            if (sourceStatuses.get(Source.AIF_RU)) {
                 aifRuParser.parse(publishedAt.get(Source.AIF_RU));
             }
-            if (parserService.getSourceStatuses().svpressaRu()) {
+            if (sourceStatuses.get(Source.SVPRESSA_RU)) {
                 svpressaRuParser.parse(publishedAt.get(Source.SVPRESSA_RU));
             }
         } finally {
-            isParsing.set(false);
+            parsingInProgress.set(false);
         }
-    }
-
-    public ArticlesAffectedDto markAsDeleted(MarkDeletedDto markDeletedDto) {
-        return new ArticlesAffectedDto(
-                newsArticleRepository.markAsDeletedByPublishedAtBefore(markDeletedDto.olderThan())
-        );
-    }
-
-    public ArticlesAffectedDto deleteMarkedArticles() {
-        return new ArticlesAffectedDto(newsArticleRepository.deleteAllMarkedAsDeleted());
-    }
-
-    public ArticlesAffectedDto deleteAllArticles() {
-        return new ArticlesAffectedDto(newsArticleRepository.deleteAllArticles());
     }
 
     private Map<Source, Map<Category, LocalDateTime>> getLatestPublishedAtByCategoryAndSource() {

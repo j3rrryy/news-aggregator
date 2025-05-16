@@ -2,31 +2,27 @@ package dev.j3rrryy.news_aggregator.controller.v1;
 
 import dev.j3rrryy.news_aggregator.dto.request.MarkDeletedDto;
 import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffectedDto;
-import dev.j3rrryy.news_aggregator.service.v1.NewsService;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummaryDto;
+import dev.j3rrryy.news_aggregator.service.v1.ArticlesService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/news")
+@RequestMapping("/v1/articles")
 @RequiredArgsConstructor
-@Tag(name = "News", description = "Manage news")
-public class NewsController {
+@Tag(name = "Articles", description = "Endpoints for managing news articles")
+public class ArticlesController {
 
-    private final NewsService newsService;
+    private final ArticlesService articlesService;
 
-    @PostMapping("/start-parsing")
-    @ResponseStatus(HttpStatus.CREATED)
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Parsing started successfully"),
-            @ApiResponse(responseCode = "409", description = "Parsing is already in progress")
-    })
-    public void startParsing() {
-        newsService.startParsingAsync();
+    @GetMapping("/summary")
+    @ApiResponse(responseCode = "200", description = "Count of new, active, deleted articles")
+    public ArticlesSummaryDto getArticlesSummary() {
+        return articlesService.getArticlesSummary();
     }
 
     @PutMapping("/mark-deleted")
@@ -39,19 +35,19 @@ public class NewsController {
             )
     })
     public ArticlesAffectedDto markAsDeleted(@Valid @RequestBody MarkDeletedDto markDeletedDto) {
-        return newsService.markAsDeleted(markDeletedDto);
+        return articlesService.markAsDeleted(markDeletedDto);
     }
 
-    @DeleteMapping("/delete-marked")
+    @DeleteMapping("/marked")
     @ApiResponse(responseCode = "200", description = "News articles marked as 'deleted' deleted successfully")
     public ArticlesAffectedDto deleteMarkedArticles() {
-        return newsService.deleteMarkedArticles();
+        return articlesService.deleteMarkedArticles();
     }
 
-    @DeleteMapping("/delete-all")
+    @DeleteMapping("/all")
     @ApiResponse(responseCode = "200", description = "All news articles deleted successfully")
     public ArticlesAffectedDto deleteAllArticles() {
-        return newsService.deleteAllArticles();
+        return articlesService.deleteAllArticles();
     }
 
 }

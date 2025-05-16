@@ -5,19 +5,36 @@ import dev.j3rrryy.news_aggregator.dto.request.AutoParsingIntervalDto;
 import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequestDto;
 import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatusDto;
 import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponseDto;
+import dev.j3rrryy.news_aggregator.dto.response.ParsingStatusDto;
 import dev.j3rrryy.news_aggregator.enums.Source;
+import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
 import dev.j3rrryy.news_aggregator.mapper.NewsSourceStatusesMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
 public class ParserService {
 
+    private static final AtomicBoolean parsingInProgress = new AtomicBoolean(false);
+
     private final ParserProperties parserProperties;
+    private final ParsingTaskExecutor parsingTaskExecutor;
     private final NewsSourceStatusesMapper newsSourceStatusesMapper;
+
+    public void startParsing() {
+        if (!parsingInProgress.compareAndSet(false, true)) {
+            throw new ParsingInProgressException();
+        }
+        parsingTaskExecutor.asyncParsingTask(parsingInProgress);
+    }
+
+    public ParsingStatusDto getParsingStatus() {
+        return new ParsingStatusDto(parsingInProgress.get());
+    }
 
     public NewsSourceStatusesResponseDto getSourceStatuses() {
         return newsSourceStatusesMapper.toResponseDto(parserProperties.getSourceStatuses());

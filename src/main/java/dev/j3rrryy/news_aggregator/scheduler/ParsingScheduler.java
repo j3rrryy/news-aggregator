@@ -2,7 +2,7 @@ package dev.j3rrryy.news_aggregator.scheduler;
 
 import dev.j3rrryy.news_aggregator.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
-import dev.j3rrryy.news_aggregator.service.v1.NewsService;
+import dev.j3rrryy.news_aggregator.service.v1.ParserService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.concurrent.ScheduledFuture;
 @RequiredArgsConstructor
 public class ParsingScheduler {
 
-    private final NewsService newsService;
+    private final ParserService parserService;
     private final TaskScheduler taskScheduler;
     private final ParserProperties parserProperties;
     private volatile ScheduledFuture<?> scheduledFuture;
@@ -57,7 +57,7 @@ public class ParsingScheduler {
 
     private void autoParsing() {
         try {
-            newsService.startParsingAsync();
+            parserService.startParsing();
         } catch (ParsingInProgressException e) {
             log.warn(e.getMessage());
         }

@@ -1,6 +1,7 @@
 package dev.j3rrryy.news_aggregator.repository;
 
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
+import dev.j3rrryy.news_aggregator.enums.Status;
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -29,6 +30,8 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID> 
 
     @Query("SELECT url FROM NewsArticle WHERE status != 'DELETED' AND url IN :urls")
     Set<String> findExistingUrls(@Param("urls") Set<String> urls);
+
+    int countByStatus(Status status);
 
     @Modifying
     @Transactional
