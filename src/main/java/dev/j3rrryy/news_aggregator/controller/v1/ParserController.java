@@ -25,13 +25,23 @@ public class ParserController {
     private final ParsingScheduler parsingScheduler;
 
     @PostMapping("/start")
-    @ResponseStatus(HttpStatus.CREATED)
+    @ResponseStatus(HttpStatus.ACCEPTED)
     @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Parsing started successfully"),
+            @ApiResponse(responseCode = "202", description = "Parsing started successfully"),
             @ApiResponse(responseCode = "409", description = "Parsing is already in progress")
     })
     public void startParsing() {
         parserService.startParsing();
+    }
+
+    @PostMapping("/stop")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @ApiResponses({
+            @ApiResponse(responseCode = "202", description = "Parsing stopping..."),
+            @ApiResponse(responseCode = "409", description = "Parsing is not running")
+    })
+    public void stopParsing() {
+        parserService.stopParsing();
     }
 
     @GetMapping("/status")

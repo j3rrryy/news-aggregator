@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -53,9 +54,19 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
     public List<TrendingTopicDto> getTrendingTopics(
-            @RequestParam @Past(message = "Start date must be in the past") LocalDateTime start,
-            @RequestParam @PastOrPresent(message = "End date must be in the past or present") LocalDateTime end,
-            @RequestParam(defaultValue = "10") @Positive(message = "Limit must be a positive number") int limit
+            @RequestParam
+            @Past(message = "Start date must be in the past")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime start,
+
+            @RequestParam
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @PastOrPresent(message = "End date must be in the past or present")
+            LocalDateTime end,
+            
+            @RequestParam(defaultValue = "10")
+            @Positive(message = "Limit must be a positive number")
+            int limit
     ) {
         return analyticsService.getTrendingTopics(start, end, limit);
     }

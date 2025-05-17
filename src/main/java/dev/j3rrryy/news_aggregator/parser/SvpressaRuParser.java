@@ -16,10 +16,8 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static java.util.Map.entry;
 
@@ -27,6 +25,7 @@ import static java.util.Map.entry;
 @Component
 public class SvpressaRuParser extends NewsParser {
 
+    private static final int INITIAL_PAGE = 1;
     private static final String URL_TEMPLATE = "https://svpressa.ru/%s/?page=%s";
     private static final Map<Category, Set<String>> urlMap = Map.of(
             Category.POLITICS, Set.of("politic"),
@@ -41,66 +40,37 @@ public class SvpressaRuParser extends NewsParser {
             entry("июля", 7), entry("августа", 8), entry("сентября", 9),
             entry("октября", 10), entry("ноября", 11), entry("декабря", 12)
     );
+    private static final RateLimiter rateLimiter = RateLimiter.create(10);
 
     @Autowired
-    public SvpressaRuParser(ExecutorService ioExecutor, ExecutorService cpuExecutor, NewsArticleRepository newsArticleRepository) {
-        super(ioExecutor, RateLimiter.create(10), cpuExecutor, newsArticleRepository);
+    public SvpressaRuParser(
+            ExecutorService ioExecutor,
+            ExecutorService cpuExecutor,
+            NewsArticleRepository newsArticleRepository
+    ) {
+        super(INITIAL_PAGE, URL_TEMPLATE, rateLimiter, ioExecutor, cpuExecutor, urlMap, newsArticleRepository);
     }
 
     @Override
-    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
-        log.info("Parsing news from svpressa.ru...");
-        for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
-            Category category = entry.getKey();
-            LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
+    protected Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
+        Elements newsArticles = doc.select("article.b-article_item");
+        Set<String> urls = new HashSet<>();
 
-            for (String path : entry.getValue()) {
-                Set<String> articleUrls = new HashSet<>();
+        for (Element article : newsArticles) {
+            try {
+                String url = Objects.requireNonNull(article.selectFirst("a.b-article__title"))
+                        .absUrl("href");
+                String publishedAtText = Objects.requireNonNull(article.selectFirst("div.b-article__date"))
+                        .text()
+                        .trim();
+                LocalDate publishedAt = parsePublishedAtPage(publishedAtText);
 
-                int fetchedPages = 0;
-                boolean endReached = false;
-
-                while (!endReached) {
-                    int startPage = fetchedPages + 1;
-                    int endPage = fetchedPages + 10;
-
-                    Set<CompletableFuture<Optional<Document>>> pageFutures = IntStream
-                            .rangeClosed(startPage, endPage)
-                            .mapToObj(page -> CompletableFuture.supplyAsync(
-                                    () -> {
-                                        String url = URL_TEMPLATE.formatted(path, page);
-                                        return downloadPage(fetchGet(url), url);
-                                    },
-                                    ioExecutor
-                            ))
-                            .collect(Collectors.toSet());
-
-                    CompletableFuture.allOf(pageFutures.toArray(CompletableFuture[]::new)).join();
-
-                    List<Document> pages = pageFutures.stream()
-                            .map(CompletableFuture::join)
-                            .flatMap(Optional::stream)
-                            .toList();
-
-                    if (pages.isEmpty()) break;
-
-                    for (Document doc : pages) {
-                        Set<String> urls = getPageUrls(doc, latestPublishedAt);
-                        if (urls.isEmpty()) {
-                            endReached = true;
-                            break;
-                        }
-                        articleUrls.addAll(urls);
-                    }
-
-                    fetchedPages += pages.size();
-                }
-
-                int saved = fetchAndSaveArticles(articleUrls, category, latestPublishedAt);
-                log.info("Saved {} new articles from {}", saved, category);
+                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt.toLocalDate())) break;
+                urls.add(url);
+            } catch (Exception ignored) {
             }
         }
-        log.info("Parsing from svpressa.ru completed");
+        return urls;
     }
 
     @Override
@@ -153,27 +123,6 @@ public class SvpressaRuParser extends NewsParser {
             log.debug("Skipping invalid article {}", doc.location());
             return Optional.empty();
         }
-    }
-
-    private Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
-        Elements newsArticles = doc.select("article.b-article_item");
-        Set<String> urls = new HashSet<>();
-
-        for (Element article : newsArticles) {
-            try {
-                String url = Objects.requireNonNull(article.selectFirst("a.b-article__title"))
-                        .absUrl("href");
-                String publishedAtText = Objects.requireNonNull(article.selectFirst("div.b-article__date"))
-                        .text()
-                        .trim();
-                LocalDate publishedAt = parsePublishedAtPage(publishedAtText);
-
-                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt.toLocalDate())) break;
-                urls.add(url);
-            } catch (Exception ignored) {
-            }
-        }
-        return urls;
     }
 
     private LocalDate parsePublishedAtPage(String text) {

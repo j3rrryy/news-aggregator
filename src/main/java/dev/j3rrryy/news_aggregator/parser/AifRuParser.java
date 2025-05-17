@@ -21,15 +21,15 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 @Slf4j
 @Component
 public class AifRuParser extends NewsParser {
 
+    private static final int INITIAL_PAGE = 1;
     private static final String URL_TEMPLATE = "https://aif.ru/%s";
     private static final String BODY_TEMPLATE = "page=%s";
     private static final String SUMMARY_AND_CONTENT_SELECTOR = """
@@ -56,76 +56,46 @@ public class AifRuParser extends NewsParser {
             .appendOptional(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
             .appendOptional(DateTimeFormatter.ofPattern("HH:mm"))
             .toFormatter();
+    private static final RateLimiter rateLimiter = RateLimiter.create(30);
 
     @Autowired
-    public AifRuParser(ExecutorService ioExecutor, ExecutorService cpuExecutor, NewsArticleRepository newsArticleRepository) {
-        super(ioExecutor, RateLimiter.create(30), cpuExecutor, newsArticleRepository);
+    public AifRuParser(
+            ExecutorService ioExecutor,
+            ExecutorService cpuExecutor,
+            NewsArticleRepository newsArticleRepository
+    ) {
+        super(INITIAL_PAGE, URL_TEMPLATE, rateLimiter, ioExecutor, cpuExecutor, urlMap, newsArticleRepository);
     }
 
     @Override
-    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
-        log.info("Parsing news from aif.ru...");
-        for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
-            Category category = entry.getKey();
-            LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
+    protected Optional<Document> fetchPage(String path, int page, AtomicBoolean stopRequested) {
+        String url = URL_TEMPLATE.formatted(path);
+        return downloadPage(fetchPost(url, BODY_TEMPLATE.formatted(page)), url, stopRequested);
+    }
 
-            for (String path : entry.getValue()) {
-                String baseUrl = URL_TEMPLATE.formatted(path);
-                Set<String> articleUrls = new HashSet<>();
+    @Override
+    protected Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
+        Elements newsArticles = doc.select("div.list_item");
+        Set<String> urls = new HashSet<>();
 
-                int fetchedPages = 0;
-                Integer firstPageHash = null;
-                boolean endReached = false;
+        for (Element article : newsArticles) {
+            try {
+                String url = Objects.requireNonNull(article.selectFirst("div.box_info a"))
+                        .absUrl("href");
+                String publishedAtText = Objects.requireNonNull(article.selectFirst("span.text_box__date"))
+                        .text()
+                        .trim();
+                LocalDateTime publishedAt = parsePublishedAt(publishedAtText);
 
-                while (!endReached) {
-                    int startPage = fetchedPages + 1;
-                    int endPage = fetchedPages + 10;
+                if (!publishedAt.isSupported(ChronoField.YEAR))
+                    publishedAt = LocalDate.now().atTime(publishedAt.toLocalTime());
 
-                    List<CompletableFuture<Optional<Document>>> pageFutures = IntStream
-                            .rangeClosed(startPage, endPage)
-                            .mapToObj(page -> CompletableFuture.supplyAsync(
-                                    () -> downloadPage(fetchPost(baseUrl, BODY_TEMPLATE.formatted(page)), baseUrl),
-                                    ioExecutor
-                            ))
-                            .toList();
-
-                    CompletableFuture.allOf(pageFutures.toArray(CompletableFuture[]::new)).join();
-
-                    List<Document> pages = pageFutures.stream()
-                            .map(CompletableFuture::join)
-                            .flatMap(Optional::stream)
-                            .toList();
-
-                    if (pages.isEmpty()) break;
-
-                    for (int i = 0; i < pages.size(); i++) {
-                        int pageNum = startPage + i;
-                        Document doc = pages.get(i);
-                        int hash = doc.text().hashCode();
-
-                        if (pageNum == 1) {
-                            firstPageHash = hash;
-                        } else if (hash == firstPageHash) {
-                            endReached = true;
-                            break;
-                        }
-
-                        Set<String> urls = getPageUrls(doc, latestPublishedAt);
-                        if (urls.isEmpty()) {
-                            endReached = true;
-                            break;
-                        }
-                        articleUrls.addAll(urls);
-                    }
-
-                    fetchedPages += pages.size();
-                }
-
-                int saved = fetchAndSaveArticles(articleUrls, category, latestPublishedAt);
-                log.info("Saved {} new articles from {}", saved, category);
+                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
+                urls.add(url);
+            } catch (Exception ignored) {
             }
         }
-        log.info("Parsing from aif.ru completed");
+        return urls;
     }
 
     @Override
@@ -177,30 +147,6 @@ public class AifRuParser extends NewsParser {
             log.debug("Skipping invalid article {}", doc.location());
             return Optional.empty();
         }
-    }
-
-    private Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
-        Elements newsArticles = doc.select("div.list_item");
-        Set<String> urls = new HashSet<>();
-
-        for (Element article : newsArticles) {
-            try {
-                String url = Objects.requireNonNull(article.selectFirst("div.box_info a"))
-                        .absUrl("href");
-                String publishedAtText = Objects.requireNonNull(article.selectFirst("span.text_box__date"))
-                        .text()
-                        .trim();
-                LocalDateTime publishedAt = parsePublishedAt(publishedAtText);
-
-                if (!publishedAt.isSupported(ChronoField.YEAR))
-                    publishedAt = LocalDate.now().atTime(publishedAt.toLocalTime());
-
-                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
-                urls.add(url);
-            } catch (Exception ignored) {
-            }
-        }
-        return urls;
     }
 
     private LocalDateTime parsePublishedAt(String text) {

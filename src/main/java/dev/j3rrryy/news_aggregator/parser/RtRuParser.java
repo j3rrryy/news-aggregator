@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
@@ -24,8 +23,9 @@ import java.util.stream.Collectors;
 @Component
 public class RtRuParser extends NewsParser {
 
+    private static final int INITIAL_PAGE = 0;
     private static final String URL_TEMPLATE = """
-            https://russian.rt.com/listing/type.ArticleVideoGallery.trend.%s/prepare/all-trends-new/5000/0
+            https://russian.rt.com/listing/type.ArticleVideoGallery.trend.%s/prepare/all-trends-new/50/%s
             """;
     private static final String CONTENT_SELECTOR = """
             div.article__text > p, div.article__text > h1, div.article__text > h2, div.article__text > h3,
@@ -66,33 +66,36 @@ public class RtRuParser extends NewsParser {
             )
     );
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm");
+    private static final RateLimiter rateLimiter = RateLimiter.create(30);
 
     @Autowired
-    public RtRuParser(ExecutorService ioExecutor, ExecutorService cpuExecutor, NewsArticleRepository newsArticleRepository) {
-        super(ioExecutor, RateLimiter.create(30), cpuExecutor, newsArticleRepository);
+    public RtRuParser(
+            ExecutorService ioExecutor,
+            ExecutorService cpuExecutor,
+            NewsArticleRepository newsArticleRepository
+    ) {
+        super(INITIAL_PAGE, URL_TEMPLATE, rateLimiter, ioExecutor, cpuExecutor, urlMap, newsArticleRepository);
     }
 
     @Override
-    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
-        log.info("Parsing news from rt.ru...");
-        for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
-            Category category = entry.getKey();
-            LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
+    protected Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
+        Elements newsArticles = doc.select("li.listing__column");
+        Set<String> urls = new HashSet<>();
 
-            Set<String> articleUrls = entry.getValue().stream()
-                    .map(URL_TEMPLATE::formatted)
-                    .map(pageUrl -> CompletableFuture
-                            .supplyAsync(() -> downloadPage(fetchGet(pageUrl), pageUrl), ioExecutor))
-                    .map(optPage -> optPage.thenApply(opt -> opt
-                            .map(page -> getPageUrls(page, latestPublishedAt))
-                            .orElseGet(Set::of)))
-                    .flatMap(futSet -> futSet.thenApply(Set::stream).join())
-                    .collect(Collectors.toSet());
+        for (Element article : newsArticles) {
+            try {
+                String url = Objects.requireNonNull(article.selectFirst("a.link"))
+                        .absUrl("href");
+                String publishedAtAttr = Objects.requireNonNull(article.selectFirst("time.date"))
+                        .attr("datetime");
+                LocalDateTime publishedAt = LocalDateTime.parse(publishedAtAttr, dateTimeFormatter);
 
-            int saved = fetchAndSaveArticles(articleUrls, category, latestPublishedAt);
-            log.info("Saved {} new articles from {}", saved, category.name());
+                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
+                urls.add(url);
+            } catch (Exception ignored) {
+            }
         }
-        log.info("Parsing from rt.ru completed");
+        return urls;
     }
 
     @Override
@@ -145,26 +148,6 @@ public class RtRuParser extends NewsParser {
             log.debug("Skipping invalid article {}", doc.location());
             return Optional.empty();
         }
-    }
-
-    private Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
-        Elements newsArticles = doc.select("li.listing__column");
-        Set<String> urls = new HashSet<>();
-
-        for (Element article : newsArticles) {
-            try {
-                String url = Objects.requireNonNull(article.selectFirst("a.link"))
-                        .absUrl("href");
-                String publishedAtAttr = Objects.requireNonNull(article.selectFirst("time.date"))
-                        .attr("datetime");
-                LocalDateTime publishedAt = LocalDateTime.parse(publishedAtAttr, dateTimeFormatter);
-
-                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
-                urls.add(url);
-            } catch (Exception ignored) {
-            }
-        }
-        return urls;
     }
 
 }

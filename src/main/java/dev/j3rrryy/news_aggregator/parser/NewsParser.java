@@ -15,9 +15,11 @@ import org.jsoup.nodes.Document;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -47,22 +49,95 @@ public abstract class NewsParser {
     );
     private static final AtomicInteger userAgentIndex = new AtomicInteger(0);
     private static final Semaphore ioSemaphore = new Semaphore(50);
-    private static final int BATCH_SIZE = 500;
 
-    protected final ExecutorService ioExecutor;
+    private final int INITIAL_PAGE;
+    private final String URL_TEMPLATE;
     private final RateLimiter rateLimiter;
+    private final ExecutorService ioExecutor;
     private final ExecutorService cpuExecutor;
+    private final Map<Category, Set<String>> urlMap;
     private final NewsArticleRepository newsArticleRepository;
 
-    public abstract void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory);
+    protected abstract Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt);
 
     protected abstract Optional<NewsArticle> parseNewsArticle(Document doc, Category category);
 
-    protected Optional<Document> downloadPage(Callable<Document> pageLoader, String urlForLog) {
-        if (Thread.interrupted()) return Optional.empty();
+    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory, AtomicBoolean stopRequested) {
+        for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
+            Category category = entry.getKey();
+            LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
+
+            for (String path : entry.getValue()) {
+                Set<String> articleUrls = new HashSet<>();
+
+                int saved = 0;
+                int fetchedPages = 0;
+                Integer firstPageHash = null;
+                boolean endReached = false;
+
+                while (!endReached) {
+                    int startPage = fetchedPages + INITIAL_PAGE;
+                    int endPage = fetchedPages + INITIAL_PAGE + 19;
+
+                    List<CompletableFuture<Optional<Document>>> pageFutures = IntStream
+                            .rangeClosed(startPage, endPage)
+                            .mapToObj(page ->
+                                    CompletableFuture.supplyAsync(() -> fetchPage(path, page, stopRequested), ioExecutor)
+                            )
+                            .toList();
+                    CompletableFuture.allOf(pageFutures.toArray(CompletableFuture[]::new)).join();
+
+                    List<Document> pages = pageFutures.stream()
+                            .map(CompletableFuture::join)
+                            .flatMap(Optional::stream)
+                            .toList();
+                    if (pages.isEmpty()) break;
+
+                    for (int i = 0; i < pages.size(); i++) {
+                        int pageNum = startPage + i;
+                        Document doc = pages.get(i);
+                        int hash = doc.text().hashCode();
+
+                        if (pageNum == INITIAL_PAGE) {
+                            firstPageHash = hash;
+                        } else if (hash == firstPageHash) {
+                            endReached = true;
+                            break;
+                        }
+
+                        Set<String> urls = getPageUrls(doc, latestPublishedAt);
+                        if (urls.isEmpty()) {
+                            endReached = true;
+                            break;
+                        }
+                        articleUrls.addAll(urls);
+                    }
+
+                    fetchedPages += pages.size();
+                    saved += fetchAndSaveArticles(articleUrls, category, latestPublishedAt, stopRequested);
+                    log.info("Saved {} new articles from {} pages, category: {}", saved, fetchedPages, category);
+                }
+            }
+        }
+    }
+
+    protected Optional<Document> fetchPage(String path, int page, AtomicBoolean stopRequested) {
+        String url = URL_TEMPLATE.formatted(path, page);
+        return downloadPage(fetchGet(url), url, stopRequested);
+    }
+
+    protected Optional<Document> downloadPage(
+            Callable<Document> pageLoader,
+            String urlForLog,
+            AtomicBoolean stopRequested
+    ) {
+        if (stopRequested.get() || Thread.interrupted()) return Optional.empty();
         try {
             ioSemaphore.acquire();
             rateLimiter.acquire();
+
+            if (stopRequested.get() || Thread.interrupted()) return Optional.empty();
+
             Document doc = pageLoader.call();
             return Optional.of(doc);
         } catch (InterruptedException e) {
@@ -80,7 +155,6 @@ public abstract class NewsParser {
         return () -> Jsoup.connect(url)
                 .userAgent(getNextUserAgent())
                 .headers(headers)
-                .timeout(120_000)
                 .get();
     }
 
@@ -89,7 +163,6 @@ public abstract class NewsParser {
             String json = Jsoup.connect(url)
                     .userAgent(getNextUserAgent())
                     .headers(headers)
-                    .timeout(120_000)
                     .header("X-Requested-With", "XMLHttpRequest")
                     .method(Connection.Method.POST)
                     .requestBody(body)
@@ -105,10 +178,15 @@ public abstract class NewsParser {
         };
     }
 
-    protected int fetchAndSaveArticles(Set<String> articleUrls, Category category, LocalDateTime latestPublishedAt) {
+    protected int fetchAndSaveArticles(
+            Set<String> articleUrls,
+            Category category,
+            LocalDateTime latestPublishedAt,
+            AtomicBoolean stopRequested
+    ) {
         Set<CompletableFuture<Optional<NewsArticle>>> articleFutures = articleUrls.stream()
                 .map(articleUrl -> CompletableFuture
-                        .supplyAsync(() -> downloadPage(fetchGet(articleUrl), articleUrl), ioExecutor)
+                        .supplyAsync(() -> downloadPage(fetchGet(articleUrl), articleUrl, stopRequested), ioExecutor)
                         .thenApplyAsync(optDoc -> optDoc
                                 .flatMap(doc -> parseNewsArticle(doc, category)), cpuExecutor))
                 .collect(Collectors.toSet());
@@ -146,13 +224,8 @@ public abstract class NewsParser {
                 .map(uniqueArticles::get)
                 .toList();
 
-        int totalSaved = 0;
-        for (int i = 0; i < toSave.size(); i += BATCH_SIZE) {
-            List<NewsArticle> batch = toSave.subList(i, Math.min(i + BATCH_SIZE, toSave.size()));
-            newsArticleRepository.saveAll(batch);
-            totalSaved += batch.size();
-        }
-        return totalSaved;
+        newsArticleRepository.saveAll(toSave);
+        return toSave.size();
     }
 
 }

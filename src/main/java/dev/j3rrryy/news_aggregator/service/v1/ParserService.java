@@ -8,6 +8,7 @@ import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponseDto;
 import dev.j3rrryy.news_aggregator.dto.response.ParsingStatusDto;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
+import dev.j3rrryy.news_aggregator.exceptions.ParsingNotRunningException;
 import dev.j3rrryy.news_aggregator.mapper.NewsSourceStatusesMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,14 @@ public class ParserService {
         }
         parsingTaskExecutor.asyncParsingTask(parsingInProgress);
     }
+
+    public void stopParsing() {
+        if (!parsingInProgress.get()) {
+            throw new ParsingNotRunningException();
+        }
+        parsingTaskExecutor.requestStop();
+    }
+
 
     public ParsingStatusDto getParsingStatus() {
         return new ParsingStatusDto(parsingInProgress.get());
