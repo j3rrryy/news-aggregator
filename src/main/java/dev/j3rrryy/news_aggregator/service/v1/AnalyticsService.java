@@ -2,12 +2,13 @@ package dev.j3rrryy.news_aggregator.service.v1;
 
 import dev.j3rrryy.news_aggregator.dto.response.*;
 import dev.j3rrryy.news_aggregator.enums.Category;
-import dev.j3rrryy.news_aggregator.exceptions.StartAfterEndException;
+import dev.j3rrryy.news_aggregator.exceptions.FromDateAfterToDateException;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class AnalyticsService {
 
     private final NewsArticleRepository newsArticleRepository;
@@ -57,10 +59,10 @@ public class AnalyticsService {
                 .toList();
     }
 
-    public List<TrendingTopicDto> getTrendingTopics(LocalDateTime start, LocalDateTime end, int limit) {
-        if (start.isAfter(end)) throw new StartAfterEndException();
-        LocalDateTime prevStart = start.minus(Duration.between(start, end));
-        return newsArticleRepository.findTopKeywordsInRange(start, end, prevStart, limit).stream()
+    public List<TrendingTopicDto> getTrendingTopics(LocalDateTime fromDate, LocalDateTime toDate, int limit) {
+        if (fromDate.isAfter(toDate)) throw new FromDateAfterToDateException();
+        LocalDateTime prevStart = fromDate.minus(Duration.between(fromDate, toDate));
+        return newsArticleRepository.findTopKeywordsInRange(fromDate, toDate, prevStart, limit).stream()
                 .map(row -> new TrendingTopicDto(
                         (String) row[0],
                         ((Number) row[1]).intValue(),

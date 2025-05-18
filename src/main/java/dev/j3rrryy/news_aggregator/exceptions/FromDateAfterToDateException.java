@@ -4,10 +4,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-public class StartAfterEndException extends RuntimeException {
+public class FromDateAfterToDateException extends RuntimeException {
 
-    public StartAfterEndException() {
-        super("Start must be before end");
+    public FromDateAfterToDateException() {
+        super("'fromDate' timestamp must be before 'toDate' timestamp");
     }
 
 }

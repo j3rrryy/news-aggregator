@@ -37,7 +37,7 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
     public List<KeywordFrequencyDto> getTopFrequentKeywords(
-            @RequestParam(defaultValue = "10") @Positive(message = "Limit must be a positive number") int limit
+            @RequestParam(defaultValue = "10") @Positive(message = "Limit must be > 0") int limit
     ) {
         return analyticsService.getTopFrequentKeywords(limit);
     }
@@ -55,20 +55,20 @@ public class AnalyticsController {
     })
     public List<TrendingTopicDto> getTrendingTopics(
             @RequestParam
-            @Past(message = "Start date must be in the past")
+            @Past(message = "'fromDate' timestamp must be in the past")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime start,
+            LocalDateTime fromDate,
 
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @PastOrPresent(message = "End date must be in the past or present")
-            LocalDateTime end,
-            
+            @PastOrPresent(message = "'toDate' timestamp must be in the past or present")
+            LocalDateTime toDate,
+
             @RequestParam(defaultValue = "10")
-            @Positive(message = "Limit must be a positive number")
+            @Positive(message = "Limit must be a > 0")
             int limit
     ) {
-        return analyticsService.getTrendingTopics(start, end, limit);
+        return analyticsService.getTrendingTopics(fromDate, toDate, limit);
     }
 
 }

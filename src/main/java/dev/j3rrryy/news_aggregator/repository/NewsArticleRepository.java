@@ -2,11 +2,8 @@ package dev.j3rrryy.news_aggregator.repository;
 
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Status;
-import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -16,16 +13,17 @@ import java.util.Set;
 import java.util.UUID;
 
 @Repository
-public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID> {
+public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID>, JpaSpecificationExecutor<NewsArticle> {
 
     @Modifying
-    @Transactional
     @Query("UPDATE NewsArticle SET status = 'ACTIVE' WHERE status = 'NEW'")
     void updateAllNewToActive();
 
     @Query("""
-            SELECT source, category, MAX(publishedAt) FROM NewsArticle
-            WHERE status != 'DELETED' GROUP BY source, category
+            SELECT source, category, MAX(publishedAt)
+            FROM NewsArticle
+            WHERE status != 'DELETED'
+            GROUP BY source, category
             """)
     List<Object[]> findLatestPublishedAtByCategoryAndSource();
 
@@ -35,17 +33,14 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID> 
     int countByStatus(Status status);
 
     @Modifying
-    @Transactional
     @Query("UPDATE NewsArticle SET status = 'DELETED' WHERE publishedAt < :olderThan AND status <> 'DELETED'")
     int markAsDeletedByPublishedAtBefore(@Param("olderThan") LocalDateTime olderThan);
 
     @Modifying
-    @Transactional
     @Query("DELETE FROM NewsArticle WHERE status = 'DELETED'")
     int deleteAllMarkedAsDeleted();
 
     @Modifying
-    @Transactional
     @Query("DELETE FROM NewsArticle")
     int deleteAllArticles();
 
@@ -75,20 +70,18 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID> 
     @Query(value = """
                 WITH
                   curr AS (
-                    SELECT k.keyword,
-                           COUNT(*) AS curr_count
+                    SELECT k.keyword, COUNT(*) AS curr_count
                     FROM news_articles n
                     JOIN news_keywords k ON n.id = k.article_id
-                    WHERE n.published_at BETWEEN :start AND :end AND n.status <> 'DELETED'
+                    WHERE n.published_at BETWEEN :fromDate AND :toDate AND n.status <> 'DELETED'
                     GROUP BY k.keyword
                   ),
             
                   prev AS (
-                    SELECT k.keyword,
-                           COUNT(*) AS prev_count
+                    SELECT k.keyword, COUNT(*) AS prev_count
                     FROM news_articles n
                     JOIN news_keywords k ON n.id = k.article_id
-                    WHERE n.published_at BETWEEN :prev_start AND :start AND n.status <> 'DELETED'
+                    WHERE n.published_at BETWEEN :prev_start AND :fromDate AND n.status <> 'DELETED'
                     GROUP BY k.keyword
                   )
             
@@ -103,8 +96,8 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID> 
                 LIMIT :limit
             """, nativeQuery = true)
     List<Object[]> findTopKeywordsInRange(
-            @Param("start") LocalDateTime start,
-            @Param("end") LocalDateTime end,
+            @Param("fromDate") LocalDateTime fromDate,
+            @Param("toDate") LocalDateTime toDate,
             @Param("prev_start") LocalDateTime prevStart,
             int limit
     );

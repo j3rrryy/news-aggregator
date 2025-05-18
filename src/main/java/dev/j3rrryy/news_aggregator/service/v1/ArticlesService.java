@@ -7,6 +7,7 @@ import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -14,6 +15,7 @@ public class ArticlesService {
 
     private final NewsArticleRepository newsArticleRepository;
 
+    @Transactional(readOnly = true)
     public ArticlesSummaryDto getArticlesSummary() {
         int newCount = newsArticleRepository.countByStatus(Status.NEW);
         int activeCount = newsArticleRepository.countByStatus(Status.ACTIVE);
@@ -21,16 +23,19 @@ public class ArticlesService {
         return new ArticlesSummaryDto(newCount, activeCount, deletedCount);
     }
 
+    @Transactional
     public ArticlesAffectedDto markAsDeleted(MarkDeletedDto markDeletedDto) {
         return new ArticlesAffectedDto(
                 newsArticleRepository.markAsDeletedByPublishedAtBefore(markDeletedDto.olderThan())
         );
     }
 
+    @Transactional
     public ArticlesAffectedDto deleteMarkedArticles() {
         return new ArticlesAffectedDto(newsArticleRepository.deleteAllMarkedAsDeleted());
     }
 
+    @Transactional
     public ArticlesAffectedDto deleteAllArticles() {
         return new ArticlesAffectedDto(newsArticleRepository.deleteAllArticles());
     }
