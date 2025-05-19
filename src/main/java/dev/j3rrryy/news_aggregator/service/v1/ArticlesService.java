@@ -27,7 +27,8 @@ public class ArticlesService {
         int newCount = newsArticleRepository.countByStatus(Status.NEW);
         int activeCount = newsArticleRepository.countByStatus(Status.ACTIVE);
         int deletedCount = newsArticleRepository.countByStatus(Status.DELETED);
-        return new ArticlesSummaryDto(newCount, activeCount, deletedCount);
+        int total = newCount + activeCount + deletedCount;
+        return new ArticlesSummaryDto(newCount, activeCount, deletedCount, total);
     }
 
     @Transactional

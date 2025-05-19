@@ -56,7 +56,7 @@ public class AifRuParser extends NewsParser {
             .appendOptional(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
             .appendOptional(DateTimeFormatter.ofPattern("HH:mm"))
             .toFormatter();
-    private static final RateLimiter rateLimiter = RateLimiter.create(30);
+    private static final RateLimiter rateLimiter = RateLimiter.create(40);
 
     @Autowired
     public AifRuParser(

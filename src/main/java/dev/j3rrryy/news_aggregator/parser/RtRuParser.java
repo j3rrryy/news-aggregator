@@ -67,7 +67,7 @@ public class RtRuParser extends NewsParser {
             )
     );
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-d HH:mm");
-    private static final RateLimiter rateLimiter = RateLimiter.create(30);
+    private static final RateLimiter rateLimiter = RateLimiter.create(40);
 
     @Autowired
     public RtRuParser(

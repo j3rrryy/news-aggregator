@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -63,20 +65,21 @@ public abstract class NewsParser {
 
     protected abstract Optional<NewsArticle> parseNewsArticle(Document doc, Category category);
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
         for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
             Category category = entry.getKey();
             LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
 
             for (String path : entry.getValue()) {
-                Set<String> articleUrls = new HashSet<>();
-
                 int saved = 0;
                 int fetchedPages = 0;
                 Integer firstPageHash = null;
                 boolean endReached = false;
 
                 while (!endReached) {
+                    Set<String> articleUrls = new HashSet<>();
+
                     int startPage = fetchedPages + INITIAL_PAGE;
                     int endPage = fetchedPages + INITIAL_PAGE + 19;
 
@@ -125,8 +128,8 @@ public abstract class NewsParser {
                             latestPublishedAt,
                             parsingStatusManager.isStopRequested()
                     );
-                    log.info("Saved {} new articles from {} pages, category: {}", saved, fetchedPages, category);
                 }
+                log.info("Saved {} new articles from {}", saved, category);
             }
         }
     }
@@ -160,6 +163,7 @@ public abstract class NewsParser {
     protected Callable<Document> fetchGet(String url) {
         return () -> Jsoup.connect(url)
                 .userAgent(getNextUserAgent())
+                .timeout(45_000)
                 .headers(headers)
                 .get();
     }
@@ -168,6 +172,7 @@ public abstract class NewsParser {
         return () -> {
             String json = Jsoup.connect(url)
                     .userAgent(getNextUserAgent())
+                    .timeout(45_000)
                     .headers(headers)
                     .header("X-Requested-With", "XMLHttpRequest")
                     .method(Connection.Method.POST)
