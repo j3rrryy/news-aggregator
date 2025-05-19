@@ -6,7 +6,9 @@ import java.time.Duration;
 
 public record AutoParsingStatusDto(
         boolean autoParsingEnabled,
-        @Schema(example = "2d5h10m") Duration autoParsingInterval
+        
+        @Schema(example = "2d5h10m")
+        Duration autoParsingInterval
 ) {
 
 }

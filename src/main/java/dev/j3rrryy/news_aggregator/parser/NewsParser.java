@@ -6,6 +6,7 @@ import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
+import dev.j3rrryy.news_aggregator.service.v1.ParsingStatusManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Connection;
@@ -15,7 +16,6 @@ import org.jsoup.nodes.Document;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -56,13 +56,14 @@ public abstract class NewsParser {
     private final ExecutorService ioExecutor;
     private final ExecutorService cpuExecutor;
     private final Map<Category, Set<String>> urlMap;
+    private final ParsingStatusManager parsingStatusManager;
     private final NewsArticleRepository newsArticleRepository;
 
     protected abstract Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt);
 
     protected abstract Optional<NewsArticle> parseNewsArticle(Document doc, Category category);
 
-    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory, AtomicBoolean stopRequested) {
+    public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
         for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
             Category category = entry.getKey();
             LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
@@ -82,7 +83,11 @@ public abstract class NewsParser {
                     List<CompletableFuture<Optional<Document>>> pageFutures = IntStream
                             .rangeClosed(startPage, endPage)
                             .mapToObj(page ->
-                                    CompletableFuture.supplyAsync(() -> fetchPage(path, page, stopRequested), ioExecutor)
+                                    CompletableFuture.supplyAsync(() -> fetchPage(
+                                                    path, page, parsingStatusManager.isStopRequested()
+                                            ),
+                                            ioExecutor
+                                    )
                             )
                             .toList();
                     CompletableFuture.allOf(pageFutures.toArray(CompletableFuture[]::new)).join();
@@ -114,29 +119,30 @@ public abstract class NewsParser {
                     }
 
                     fetchedPages += pages.size();
-                    saved += fetchAndSaveArticles(articleUrls, category, latestPublishedAt, stopRequested);
+                    saved += fetchAndSaveArticles(
+                            articleUrls,
+                            category,
+                            latestPublishedAt,
+                            parsingStatusManager.isStopRequested()
+                    );
                     log.info("Saved {} new articles from {} pages, category: {}", saved, fetchedPages, category);
                 }
             }
         }
     }
 
-    protected Optional<Document> fetchPage(String path, int page, AtomicBoolean stopRequested) {
+    protected Optional<Document> fetchPage(String path, int page, boolean stopRequested) {
         String url = URL_TEMPLATE.formatted(path, page);
         return downloadPage(fetchGet(url), url, stopRequested);
     }
 
-    protected Optional<Document> downloadPage(
-            Callable<Document> pageLoader,
-            String urlForLog,
-            AtomicBoolean stopRequested
-    ) {
-        if (stopRequested.get() || Thread.interrupted()) return Optional.empty();
+    protected Optional<Document> downloadPage(Callable<Document> pageLoader, String urlForLog, boolean stopRequested) {
+        if (stopRequested || Thread.interrupted()) return Optional.empty();
         try {
             ioSemaphore.acquire();
             rateLimiter.acquire();
 
-            if (stopRequested.get() || Thread.interrupted()) return Optional.empty();
+            if (stopRequested || Thread.interrupted()) return Optional.empty();
 
             Document doc = pageLoader.call();
             return Optional.of(doc);
@@ -182,7 +188,7 @@ public abstract class NewsParser {
             Set<String> articleUrls,
             Category category,
             LocalDateTime latestPublishedAt,
-            AtomicBoolean stopRequested
+            boolean stopRequested
     ) {
         Set<CompletableFuture<Optional<NewsArticle>>> articleFutures = articleUrls.stream()
                 .map(articleUrl -> CompletableFuture

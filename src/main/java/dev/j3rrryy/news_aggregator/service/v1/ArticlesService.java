@@ -6,6 +6,7 @@ import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummaryDto;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ArticlesService {
 
+    private final CacheManagerService cacheManagerService;
     private final NewsArticleRepository newsArticleRepository;
 
     @Transactional(readOnly = true)
+    @Cacheable(
+            value = "newsArticlesSummary",
+            key = "#root.methodName",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public ArticlesSummaryDto getArticlesSummary() {
         int newCount = newsArticleRepository.countByStatus(Status.NEW);
         int activeCount = newsArticleRepository.countByStatus(Status.ACTIVE);
@@ -25,6 +32,7 @@ public class ArticlesService {
 
     @Transactional
     public ArticlesAffectedDto markAsDeleted(MarkDeletedDto markDeletedDto) {
+        cacheManagerService.clearAllCaches();
         return new ArticlesAffectedDto(
                 newsArticleRepository.markAsDeletedByPublishedAtBefore(markDeletedDto.olderThan())
         );
@@ -32,11 +40,13 @@ public class ArticlesService {
 
     @Transactional
     public ArticlesAffectedDto deleteMarkedArticles() {
+        cacheManagerService.clearAllCaches();
         return new ArticlesAffectedDto(newsArticleRepository.deleteAllMarkedAsDeleted());
     }
 
     @Transactional
     public ArticlesAffectedDto deleteAllArticles() {
+        cacheManagerService.clearAllCaches();
         return new ArticlesAffectedDto(newsArticleRepository.deleteAllArticles());
     }
 

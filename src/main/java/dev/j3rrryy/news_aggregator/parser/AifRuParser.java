@@ -6,6 +6,7 @@ import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
+import dev.j3rrryy.news_aggregator.service.v1.ParsingStatusManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,7 +23,6 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -62,13 +62,23 @@ public class AifRuParser extends NewsParser {
     public AifRuParser(
             ExecutorService ioExecutor,
             ExecutorService cpuExecutor,
+            ParsingStatusManager parsingStatusManager,
             NewsArticleRepository newsArticleRepository
     ) {
-        super(INITIAL_PAGE, URL_TEMPLATE, rateLimiter, ioExecutor, cpuExecutor, urlMap, newsArticleRepository);
+        super(
+                INITIAL_PAGE,
+                URL_TEMPLATE,
+                rateLimiter,
+                ioExecutor,
+                cpuExecutor,
+                urlMap,
+                parsingStatusManager,
+                newsArticleRepository
+        );
     }
 
     @Override
-    protected Optional<Document> fetchPage(String path, int page, AtomicBoolean stopRequested) {
+    protected Optional<Document> fetchPage(String path, int page, boolean stopRequested) {
         String url = URL_TEMPLATE.formatted(path);
         return downloadPage(fetchPost(url, BODY_TEMPLATE.formatted(page)), url, stopRequested);
     }

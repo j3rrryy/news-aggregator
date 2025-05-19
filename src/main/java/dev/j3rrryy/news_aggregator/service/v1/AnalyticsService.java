@@ -5,6 +5,7 @@ import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.exceptions.FromDateAfterToDateException;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,11 @@ public class AnalyticsService {
 
     private final NewsArticleRepository newsArticleRepository;
 
+    @Cacheable(
+            value = "newsCategoryCounts",
+            key = "#root.methodName",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public CategoryCountsDto getCategoryCounts() {
         List<Object[]> counts = newsArticleRepository.countArticlesByCategory();
         Map<Category, Integer> categoryCounts = new HashMap<>();
@@ -42,6 +48,11 @@ public class AnalyticsService {
         );
     }
 
+    @Cacheable(
+            value = "newsTopFrequentKeywords",
+            key = "#root.methodName + '_' + #limit",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public List<KeywordFrequencyDto> getTopFrequentKeywords(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return newsArticleRepository.findMostFrequentKeywords(pageable).stream()
@@ -49,6 +60,11 @@ public class AnalyticsService {
                 .toList();
     }
 
+    @Cacheable(
+            value = "newsKeywordTrend",
+            key = "#root.methodName + '_' + #keyword",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public List<KeywordDateCountDto> getKeywordTrend(String keyword) {
         return newsArticleRepository.findKeywordFrequencyOverTime(keyword).stream()
                 .map(row -> {
@@ -59,6 +75,11 @@ public class AnalyticsService {
                 .toList();
     }
 
+    @Cacheable(
+            value = "newsTrendingTopics",
+            key = "#root.methodName + '_' + #fromDate + '_' + #toDate + '_' + #limit",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public List<TrendingTopicDto> getTrendingTopics(LocalDateTime fromDate, LocalDateTime toDate, int limit) {
         if (fromDate.isAfter(toDate)) throw new FromDateAfterToDateException();
         LocalDateTime prevStart = fromDate.minus(Duration.between(fromDate, toDate));

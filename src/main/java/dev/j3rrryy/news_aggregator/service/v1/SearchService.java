@@ -10,6 +10,7 @@ import dev.j3rrryy.news_aggregator.mapper.SearchMapper;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import dev.j3rrryy.news_aggregator.specification.NewsArticleSpecs;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -21,12 +22,20 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class SearchService {
 
     private final SearchMapper searchMapper;
     private final NewsArticleRepository newsArticleRepository;
 
-    @Transactional(readOnly = true)
+    @Cacheable(
+            value = "newsSearch",
+            key = "#root.methodName + '_' + #query + '_' + #dateFrom + '_' + " +
+                    "#dateTo + '_' + #category + '_' + #source + '_' + " +
+                    "#status + '_' + (#keywords != null ? #keywords.hashCode() : null) + '_' + " +
+                    "#sortField + '_' + #sortDirection + '_' + #page + '_' + #size",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public Page<NewsArticleSummary> searchNews(
             String query,
             LocalDateTime dateFrom,
@@ -37,8 +46,8 @@ public class SearchService {
             List<String> keywords,
             SortField sortField,
             SortDirection sortDirection,
-            Integer page,
-            Integer size
+            int page,
+            int size
     ) {
         if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) throw new FromDateAfterToDateException();
 
@@ -54,8 +63,6 @@ public class SearchService {
 
         SortField safeField = (sortField == null) ? SortField.PUBLISHED_AT : sortField;
         SortDirection safeDirection = (sortDirection == null) ? SortDirection.DESC : sortDirection;
-        int safePage = (page != null) ? page : 0;
-        int safeSize = (size != null) ? size : 10;
 
         Sort.Direction direction = Sort.Direction.fromString(safeDirection.name());
         String property = switch (safeField) {
@@ -70,12 +77,16 @@ public class SearchService {
             case SOURCE -> "source";
         };
 
-        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(direction, property));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, property));
         return newsArticleRepository.findAll(spec, pageable)
                 .map(searchMapper::toSummary);
     }
 
-    @Transactional(readOnly = true)
+    @Cacheable(
+            value = "newsById",
+            key = "#root.methodName + '_' + #id",
+            condition = "!@parsingStatusManager.isParsingInProgress()"
+    )
     public NewsArticleFull getById(UUID id) {
         return newsArticleRepository.findById(id)
                 .map(searchMapper::toFull)

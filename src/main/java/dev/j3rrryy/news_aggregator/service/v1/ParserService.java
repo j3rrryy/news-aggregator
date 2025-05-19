@@ -14,35 +14,33 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
 public class ParserService {
 
-    private static final AtomicBoolean parsingInProgress = new AtomicBoolean(false);
-
     private final ParserProperties parserProperties;
     private final ParsingTaskExecutor parsingTaskExecutor;
+    private final ParsingStatusManager parsingStatusManager;
     private final NewsSourceStatusesMapper newsSourceStatusesMapper;
 
     public void startParsing() {
-        if (!parsingInProgress.compareAndSet(false, true)) {
+        if (!parsingStatusManager.startParsing()) {
             throw new ParsingInProgressException();
         }
-        parsingTaskExecutor.asyncParsingTask(parsingInProgress);
+        parsingTaskExecutor.asyncParsingTask();
     }
 
     public void stopParsing() {
-        if (!parsingInProgress.get()) {
+        if (!parsingStatusManager.isParsingInProgress()) {
             throw new ParsingNotRunningException();
         }
-        parsingTaskExecutor.requestStop();
+        parsingStatusManager.requestStop();
     }
 
 
     public ParsingStatusDto getParsingStatus() {
-        return new ParsingStatusDto(parsingInProgress.get());
+        return new ParsingStatusDto(parsingStatusManager.isParsingInProgress());
     }
 
     public NewsSourceStatusesResponseDto getSourceStatuses() {

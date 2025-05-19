@@ -64,14 +64,14 @@ public class SearchController {
             @RequestParam(required = false)
             SortDirection sortDirection,
 
-            @RequestParam(required = false)
+            @RequestParam(defaultValue = "0")
             @PositiveOrZero(message = "Page must be >= 0")
-            Integer page,
+            int page,
 
-            @RequestParam(required = false)
+            @RequestParam(defaultValue = "10")
             @Positive(message = "Size must be > 0")
             @Max(value = 100, message = "Size must be <= 100")
-            Integer size
+            int size
     ) {
         return searchService.searchNews(
                 query,

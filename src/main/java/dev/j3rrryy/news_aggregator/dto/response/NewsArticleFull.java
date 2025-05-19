@@ -4,6 +4,7 @@ import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -20,6 +21,6 @@ public record NewsArticleFull(
         Status status,
         LocalDateTime publishedAt,
         Source source
-) {
+) implements Serializable {
 
 }

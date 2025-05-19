@@ -13,24 +13,23 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ParsingTaskExecutor {
 
-    private static final AtomicBoolean stopRequested = new AtomicBoolean(false);
-
     private final RtRuParser rtRuParser;
     private final AifRuParser aifRuParser;
     private final SvpressaRuParser svpressaRuParser;
     private final ParserProperties parserProperties;
+    private final CacheManagerService cacheManagerService;
+    private final ParsingStatusManager parsingStatusManager;
     private final NewsArticleRepository newsArticleRepository;
 
     @Async
     @Transactional
-    public void asyncParsingTask(AtomicBoolean parsingInProgress) {
+    public void asyncParsingTask() {
         try {
             Map<Source, NewsParser> parserMap = Map.of(
                     Source.RT_RU, rtRuParser,
@@ -38,27 +37,25 @@ public class ParsingTaskExecutor {
                     Source.SVPRESSA_RU, svpressaRuParser
             );
 
+            cacheManagerService.clearAllCaches();
             newsArticleRepository.updateAllNewToActive();
             Map<Source, Map<Category, LocalDateTime>> publishedAt = getLatestPublishedAtByCategoryAndSource();
             Map<Source, Boolean> sourceStatuses = parserProperties.getSourceStatuses();
 
             for (Source source : Source.values()) {
-                if (!stopRequested.get() && sourceStatuses.get(source)) {
+                if (!parsingStatusManager.isStopRequested() && sourceStatuses.get(source)) {
                     log.info("Parsing news from {}...", source);
-                    parserMap.get(source).parse(publishedAt.get(source), stopRequested);
+                    parserMap.get(source).parse(publishedAt.get(source));
                     log.info("Parsing from {} completed", source);
                 }
             }
         } finally {
-            stopRequested.set(false);
-            parsingInProgress.set(false);
+            parsingStatusManager.stopParsing();
+            parsingStatusManager.resetStopRequest();
         }
     }
 
-    public void requestStop() {
-        stopRequested.set(true);
-    }
-
+    @Transactional(readOnly = true)
     private Map<Source, Map<Category, LocalDateTime>> getLatestPublishedAtByCategoryAndSource() {
         List<Object[]> query = newsArticleRepository.findLatestPublishedAtByCategoryAndSource();
         Map<Source, Map<Category, LocalDateTime>> result = new HashMap<>();

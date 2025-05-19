@@ -6,6 +6,7 @@ import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
+import dev.j3rrryy.news_aggregator.service.v1.ParsingStatusManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -46,9 +47,19 @@ public class SvpressaRuParser extends NewsParser {
     public SvpressaRuParser(
             ExecutorService ioExecutor,
             ExecutorService cpuExecutor,
+            ParsingStatusManager parsingStatusManager,
             NewsArticleRepository newsArticleRepository
     ) {
-        super(INITIAL_PAGE, URL_TEMPLATE, rateLimiter, ioExecutor, cpuExecutor, urlMap, newsArticleRepository);
+        super(
+                INITIAL_PAGE,
+                URL_TEMPLATE,
+                rateLimiter,
+                ioExecutor,
+                cpuExecutor,
+                urlMap,
+                parsingStatusManager,
+                newsArticleRepository
+        );
     }
 
     @Override

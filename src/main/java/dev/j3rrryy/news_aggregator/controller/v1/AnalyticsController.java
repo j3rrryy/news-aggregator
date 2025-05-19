@@ -55,8 +55,8 @@ public class AnalyticsController {
     })
     public List<TrendingTopicDto> getTrendingTopics(
             @RequestParam
-            @Past(message = "'fromDate' timestamp must be in the past")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            @Past(message = "'fromDate' timestamp must be in the past")
             LocalDateTime fromDate,
 
             @RequestParam

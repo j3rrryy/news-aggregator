@@ -33,7 +33,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID>,
     int countByStatus(Status status);
 
     @Modifying
-    @Query("UPDATE NewsArticle SET status = 'DELETED' WHERE publishedAt < :olderThan AND status <> 'DELETED'")
+    @Query("UPDATE NewsArticle SET status = 'DELETED' WHERE publishedAt < :olderThan AND status != 'DELETED'")
     int markAsDeletedByPublishedAtBefore(@Param("olderThan") LocalDateTime olderThan);
 
     @Modifying
@@ -61,7 +61,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID>,
                 SELECT FUNCTION('date_trunc', 'day', n.publishedAt) AS day, COUNT(n)
                 FROM NewsArticle n
                 JOIN n.keywords k
-                WHERE LOWER(k) LIKE CONCAT('%', LOWER(:keyword), '%') AND n.status <> 'DELETED'
+                WHERE LOWER(k) LIKE CONCAT('%', LOWER(:keyword), '%') AND n.status != 'DELETED'
                 GROUP BY day
                 ORDER BY day
             """)
