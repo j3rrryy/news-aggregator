@@ -101,8 +101,11 @@ public class RtRuParser extends NewsParser {
                         .attr("datetime");
                 LocalDateTime publishedAt = LocalDateTime.parse(publishedAtAttr, dateTimeFormatter);
 
-                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
-                urls.add(url);
+                if (latestPublishedAt == null || publishedAt.isAfter(latestPublishedAt)) {
+                    urls.add(url);
+                } else {
+                    break;
+                }
             } catch (Exception ignored) {
             }
         }

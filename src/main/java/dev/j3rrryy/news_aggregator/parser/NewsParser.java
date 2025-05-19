@@ -121,6 +121,7 @@ public abstract class NewsParser {
                         articleUrls.addAll(urls);
                     }
 
+                    log.info("Found {} new articles from {}", articleUrls.size(), category);
                     fetchedPages += pages.size();
                     saved += fetchAndSaveArticles(
                             articleUrls,
@@ -129,7 +130,7 @@ public abstract class NewsParser {
                             parsingStatusManager.isStopRequested()
                     );
                 }
-                log.info("Saved {} new articles from {}", saved, category);
+                log.info("Saved {} unique articles from {}", saved, category);
             }
         }
     }

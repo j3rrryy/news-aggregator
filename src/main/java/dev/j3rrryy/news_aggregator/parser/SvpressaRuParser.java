@@ -76,8 +76,11 @@ public class SvpressaRuParser extends NewsParser {
                         .trim();
                 LocalDate publishedAt = parsePublishedAtPage(publishedAtText);
 
-                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt.toLocalDate())) break;
-                urls.add(url);
+                if (latestPublishedAt == null || publishedAt.isAfter(latestPublishedAt.toLocalDate())) {
+                    urls.add(url);
+                } else {
+                    break;
+                }
             } catch (Exception ignored) {
             }
         }

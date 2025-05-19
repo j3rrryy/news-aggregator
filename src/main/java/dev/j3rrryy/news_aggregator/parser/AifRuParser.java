@@ -100,8 +100,11 @@ public class AifRuParser extends NewsParser {
                 if (!publishedAt.isSupported(ChronoField.YEAR))
                     publishedAt = LocalDate.now().atTime(publishedAt.toLocalTime());
 
-                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt)) break;
-                urls.add(url);
+                if (latestPublishedAt == null || publishedAt.isAfter(latestPublishedAt)) {
+                    urls.add(url);
+                } else {
+                    break;
+                }
             } catch (Exception ignored) {
             }
         }
