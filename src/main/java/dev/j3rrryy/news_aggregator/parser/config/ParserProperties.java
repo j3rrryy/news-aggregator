@@ -1,4 +1,4 @@
-package dev.j3rrryy.news_aggregator.config;
+package dev.j3rrryy.news_aggregator.parser.config;
 
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;

@@ -1,6 +1,5 @@
 package dev.j3rrryy.news_aggregator.service.v1;
 
-import dev.j3rrryy.news_aggregator.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.dto.request.AutoParsingIntervalDto;
 import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequestDto;
 import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatusDto;
@@ -10,6 +9,9 @@ import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingNotRunningException;
 import dev.j3rrryy.news_aggregator.mapper.NewsSourceStatusesMapper;
+import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
+import dev.j3rrryy.news_aggregator.parser.service.ParsingOrchestrator;
+import dev.j3rrryy.news_aggregator.parser.service.ParsingStatusManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +22,7 @@ import java.util.Map;
 public class ParserService {
 
     private final ParserProperties parserProperties;
-    private final ParsingTaskExecutor parsingTaskExecutor;
+    private final ParsingOrchestrator parsingOrchestrator;
     private final ParsingStatusManager parsingStatusManager;
     private final NewsSourceStatusesMapper newsSourceStatusesMapper;
 
@@ -28,7 +30,7 @@ public class ParserService {
         if (!parsingStatusManager.startParsing()) {
             throw new ParsingInProgressException();
         }
-        parsingTaskExecutor.asyncParsingTask();
+        parsingOrchestrator.runAsyncParsing();
     }
 
     public void stopParsing() {

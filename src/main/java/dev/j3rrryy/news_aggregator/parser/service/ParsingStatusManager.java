@@ -1,4 +1,4 @@
-package dev.j3rrryy.news_aggregator.service.v1;
+package dev.j3rrryy.news_aggregator.parser.service;
 
 import org.springframework.stereotype.Component;
 

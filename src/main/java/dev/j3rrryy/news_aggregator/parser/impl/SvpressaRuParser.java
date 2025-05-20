@@ -1,12 +1,14 @@
-package dev.j3rrryy.news_aggregator.parser;
+package dev.j3rrryy.news_aggregator.parser.impl;
 
 import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
-import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
-import dev.j3rrryy.news_aggregator.service.v1.ParsingStatusManager;
+import dev.j3rrryy.news_aggregator.parser.NewsParser;
+import dev.j3rrryy.news_aggregator.parser.service.PageFetcher;
+import dev.j3rrryy.news_aggregator.parser.service.ParsingService;
+import dev.j3rrryy.news_aggregator.parser.service.ParsingStatusManager;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -45,25 +47,34 @@ public class SvpressaRuParser extends NewsParser {
 
     @Autowired
     public SvpressaRuParser(
+            PageFetcher pageFetcher,
+            ParsingStatusManager parsingStatusManager,
             ExecutorService ioExecutor,
             ExecutorService cpuExecutor,
-            ParsingStatusManager parsingStatusManager,
-            NewsArticleRepository newsArticleRepository
+            ParsingService parsingService
     ) {
         super(
+                pageFetcher,
+                parsingStatusManager,
                 INITIAL_PAGE,
                 URL_TEMPLATE,
                 rateLimiter,
                 ioExecutor,
                 cpuExecutor,
-                urlMap,
-                parsingStatusManager,
-                newsArticleRepository
+                parsingService,
+                urlMap
         );
     }
 
     @Override
+    public Source getSource() {
+        return Source.SVPRESSA_RU;
+    }
+
+    @Override
     protected Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt) {
+        if (parsingStatusManager.isStopRequested()) return Set.of();
+
         Elements newsArticles = doc.select("article.b-article_item");
         Set<String> urls = new HashSet<>();
 
@@ -76,11 +87,8 @@ public class SvpressaRuParser extends NewsParser {
                         .trim();
                 LocalDate publishedAt = parsePublishedAtPage(publishedAtText);
 
-                if (latestPublishedAt == null || publishedAt.isAfter(latestPublishedAt.toLocalDate())) {
-                    urls.add(url);
-                } else {
-                    break;
-                }
+                if (latestPublishedAt != null && publishedAt.isBefore(latestPublishedAt.toLocalDate())) break;
+                urls.add(url);
             } catch (Exception ignored) {
             }
         }
@@ -89,6 +97,7 @@ public class SvpressaRuParser extends NewsParser {
 
     @Override
     protected Optional<NewsArticle> parseNewsArticle(Document doc, Category category) {
+        if (parsingStatusManager.isStopRequested()) return Optional.empty();
         try {
             String title = Objects.requireNonNull(doc.selectFirst("h1.b-text__title"))
                     .text()

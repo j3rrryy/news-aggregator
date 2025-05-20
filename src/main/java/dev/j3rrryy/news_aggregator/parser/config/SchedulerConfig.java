@@ -1,4 +1,4 @@
-package dev.j3rrryy.news_aggregator.config;
+package dev.j3rrryy.news_aggregator.parser.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

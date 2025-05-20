@@ -1,7 +1,7 @@
-package dev.j3rrryy.news_aggregator.scheduler;
+package dev.j3rrryy.news_aggregator.parser.scheduler;
 
-import dev.j3rrryy.news_aggregator.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
+import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.service.v1.ParserService;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;

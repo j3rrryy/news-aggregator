@@ -5,7 +5,7 @@ import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequestDto;
 import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatusDto;
 import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponseDto;
 import dev.j3rrryy.news_aggregator.dto.response.ParsingStatusDto;
-import dev.j3rrryy.news_aggregator.scheduler.ParsingScheduler;
+import dev.j3rrryy.news_aggregator.parser.scheduler.ParsingScheduler;
 import dev.j3rrryy.news_aggregator.service.v1.ParserService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
