@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -30,9 +30,11 @@ public class SearchService {
 
     @Cacheable(
             value = "newsSearch",
-            key = "#root.methodName + '_' + #query + '_' + #dateFrom + '_' + " +
-                    "#dateTo + '_' + #category + '_' + #source + '_' + " +
-                    "#status + '_' + (#keywords != null ? #keywords.hashCode() : null) + '_' + " +
+            key = "#root.methodName + '_' + #query + '_' + #dateFrom + '_' + #dateTo + '_' + " +
+                    "T(java.util.Objects).hash(#categories != null ? new java.util.TreeSet(#categories) : null) + '_' + " +
+                    "T(java.util.Objects).hash(#sources != null ? new java.util.TreeSet(#sources) : null) + '_' + " +
+                    "T(java.util.Objects).hash(#statuses != null ? new java.util.TreeSet(#statuses) : null) + '_' + " +
+                    "T(java.util.Objects).hash(#keywords != null ? new java.util.TreeSet(#keywords) : null) + '_' + " +
                     "#sortField + '_' + #sortDirection + '_' + #page + '_' + #size",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
@@ -40,10 +42,10 @@ public class SearchService {
             String query,
             LocalDateTime dateFrom,
             LocalDateTime dateTo,
-            Category category,
-            Source source,
-            Status status,
-            List<String> keywords,
+            Set<Category> categories,
+            Set<Source> sources,
+            Set<Status> statuses,
+            Set<String> keywords,
             SortField sortField,
             SortDirection sortDirection,
             int page,
@@ -55,9 +57,9 @@ public class SearchService {
                 query,
                 dateFrom,
                 dateTo,
-                category,
-                source,
-                status,
+                categories,
+                sources,
+                statuses,
                 keywords
         );
 

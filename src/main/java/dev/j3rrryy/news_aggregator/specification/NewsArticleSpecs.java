@@ -10,7 +10,7 @@ import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
-import java.util.Collection;
+import java.util.Set;
 
 public class NewsArticleSpecs {
 
@@ -18,16 +18,16 @@ public class NewsArticleSpecs {
             String query,
             LocalDateTime dateFrom,
             LocalDateTime dateTo,
-            Category category,
-            Source source,
-            Status status,
-            Collection<String> keywords
+            Set<Category> categories,
+            Set<Source> sources,
+            Set<Status> statuses,
+            Set<String> keywords
     ) {
         return Specification.where(fullText(query))
                 .and(dateBetween(dateFrom, dateTo))
-                .and(byCategory(category))
-                .and(bySource(source))
-                .and(byStatus(status))
+                .and(byCategories(categories))
+                .and(bySources(sources))
+                .and(byStatuses(statuses))
                 .and(keywordsIn(keywords));
     }
 
@@ -71,25 +71,34 @@ public class NewsArticleSpecs {
         };
     }
 
-    public static Specification<NewsArticle> byCategory(Category category) {
-        return (root, criteriaQuery, criteriaBuilder) -> category == null
-                ? criteriaBuilder.conjunction()
-                : criteriaBuilder.equal(root.get("category"), category);
+    public static Specification<NewsArticle> byCategories(Set<Category> categories) {
+        return (root, criteriaQuery, criteriaBuilder) -> {
+            if (categories == null || categories.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            return root.get("category").in(categories);
+        };
     }
 
-    public static Specification<NewsArticle> bySource(Source source) {
-        return (root, criteriaQuery, criteriaBuilder) -> source == null
-                ? criteriaBuilder.conjunction()
-                : criteriaBuilder.equal(root.get("source"), source);
+    public static Specification<NewsArticle> bySources(Set<Source> sources) {
+        return (root, criteriaQuery, criteriaBuilder) -> {
+            if (sources == null || sources.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            return root.get("source").in(sources);
+        };
     }
 
-    public static Specification<NewsArticle> byStatus(Status status) {
-        return (root, criteriaQuery, criteriaBuilder) -> status == null
-                ? criteriaBuilder.conjunction()
-                : criteriaBuilder.equal(root.get("status"), status);
+    public static Specification<NewsArticle> byStatuses(Set<Status> statuses) {
+        return (root, criteriaQuery, criteriaBuilder) -> {
+            if (statuses == null || statuses.isEmpty()) {
+                return criteriaBuilder.conjunction();
+            }
+            return root.get("status").in(statuses);
+        };
     }
 
-    public static Specification<NewsArticle> keywordsIn(Collection<String> keywords) {
+    public static Specification<NewsArticle> keywordsIn(Set<String> keywords) {
         return (root, criteriaQuery, criteriaBuilder) -> {
             if (keywords == null || keywords.isEmpty()) {
                 return criteriaBuilder.conjunction();

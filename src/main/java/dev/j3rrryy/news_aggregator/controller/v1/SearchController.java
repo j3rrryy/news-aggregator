@@ -15,7 +15,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Validated
@@ -47,16 +47,16 @@ public class SearchController {
             LocalDateTime dateTo,
 
             @RequestParam(required = false)
-            Category category,
+            Set<Category> category,
 
             @RequestParam(required = false)
-            Source source,
+            Set<Source> source,
 
             @RequestParam(required = false)
-            Status status,
+            Set<Status> status,
 
             @RequestParam(required = false)
-            List<String> keywords,
+            Set<String> keywords,
 
             @RequestParam(required = false)
             SortField sortField,
