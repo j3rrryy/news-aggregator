@@ -1,5 +1,6 @@
 package dev.j3rrryy.news_aggregator.controller.v1;
 
+import dev.j3rrryy.news_aggregator.dto.response.CursorPage;
 import dev.j3rrryy.news_aggregator.dto.response.NewsArticleFull;
 import dev.j3rrryy.news_aggregator.dto.response.NewsArticleSummary;
 import dev.j3rrryy.news_aggregator.enums.*;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -32,7 +32,7 @@ public class SearchController {
             @ApiResponse(responseCode = "200", description = "Search results"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public Page<NewsArticleSummary> searchNews(
+    public CursorPage<NewsArticleSummary> searchNews(
             @RequestParam(required = false)
             String query,
 
@@ -64,9 +64,8 @@ public class SearchController {
             @RequestParam(required = false)
             SortDirection sortDirection,
 
-            @RequestParam(defaultValue = "0")
-            @PositiveOrZero(message = "Page must be >= 0")
-            int page,
+            @RequestParam(required = false)
+            String cursor,
 
             @RequestParam(defaultValue = "10")
             @Positive(message = "Size must be > 0")
@@ -83,7 +82,7 @@ public class SearchController {
                 keywords,
                 sortField,
                 sortDirection,
-                page,
+                cursor,
                 size
         );
     }

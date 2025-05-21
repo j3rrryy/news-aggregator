@@ -31,6 +31,9 @@ CREATE TABLE news_media_urls (
 CREATE INDEX idx_news_articles_category ON news_articles (category);
 CREATE INDEX idx_news_articles_status ON news_articles (status);
 CREATE INDEX idx_news_articles_published_at ON news_articles (published_at);
+CREATE INDEX idx_news_articles_source ON news_articles (source);
+
+CREATE INDEX idx_news_articles_published_at_id_desc ON news_articles (published_at DESC, id DESC);
 CREATE INDEX idx_news_articles_category_source_published_at ON news_articles (category, source, published_at DESC);
 
 CREATE INDEX idx_news_articles_content_russian ON news_articles

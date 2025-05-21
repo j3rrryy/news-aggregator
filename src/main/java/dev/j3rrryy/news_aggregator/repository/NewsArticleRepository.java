@@ -9,7 +9,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -26,9 +25,6 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID>,
             GROUP BY source, category
             """)
     List<Object[]> findLatestPublishedAtByCategoryAndSource();
-
-    @Query("SELECT url FROM NewsArticle WHERE status != 'DELETED' AND url IN :urls")
-    Set<String> findExistingUrls(@Param("urls") Set<String> urls);
 
     int countByStatus(Status status);
 

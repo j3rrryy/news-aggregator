@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class InvalidDurationFormatException extends RuntimeException {
 
     public InvalidDurationFormatException(String duration) {
-        super("Invalid duration format: " + duration + ". Expected format is XdYhZm.");
+        super("Invalid duration format: " + duration + ". Expected format is XdYhZm");
     }
 
 }
