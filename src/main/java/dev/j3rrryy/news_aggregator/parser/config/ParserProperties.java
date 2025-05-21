@@ -28,4 +28,6 @@ public class ParserProperties {
 
     private Map<Source, Boolean> sourceStatuses = new EnumMap<>(Source.class);
 
+    private Map<Source, ParserConfig> configs = new EnumMap<>(Source.class);
+
 }

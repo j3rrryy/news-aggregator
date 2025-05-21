@@ -4,10 +4,12 @@ import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
+import dev.j3rrryy.news_aggregator.parser.config.ParserConfig;
+import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.parser.service.PageFetcher;
 import dev.j3rrryy.news_aggregator.parser.service.ParsingService;
 import dev.j3rrryy.news_aggregator.parser.service.ParsingStatusManager;
-import lombok.RequiredArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 
@@ -18,40 +20,56 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.IntStream;
 
 @Slf4j
-@RequiredArgsConstructor
 public abstract class NewsParser {
 
+    @Getter
+    protected final Source source;
+    protected final int initialPage;
+    protected final String urlTemplate;
+    protected final RateLimiter rateLimiter;
     protected final PageFetcher pageFetcher;
+    protected final ParserConfig parserConfig;
+    protected final ExecutorService ioExecutor;
+    protected final ExecutorService cpuExecutor;
+    protected final ParsingService parsingService;
     protected final ParsingStatusManager parsingStatusManager;
 
-    private final int INITIAL_PAGE;
-    private final String URL_TEMPLATE;
-    private final RateLimiter rateLimiter;
-    private final ExecutorService ioExecutor;
-    private final ExecutorService cpuExecutor;
-    private final ParsingService parsingService;
-    private final Map<Category, Set<String>> urlMap;
-
-    public abstract Source getSource();
+    protected NewsParser(
+            Source source,
+            int initialPage,
+            String urlTemplate,
+            PageFetcher pageFetcher,
+            ExecutorService ioExecutor,
+            ExecutorService cpuExecutor,
+            ParsingService parsingService,
+            ParserProperties parserProperties,
+            ParsingStatusManager parsingStatusManager
+    ) {
+        this.source = source;
+        this.ioExecutor = ioExecutor;
+        this.cpuExecutor = cpuExecutor;
+        this.initialPage = initialPage;
+        this.urlTemplate = urlTemplate;
+        this.pageFetcher = pageFetcher;
+        this.parsingService = parsingService;
+        this.parsingStatusManager = parsingStatusManager;
+        this.parserConfig = parserProperties.getConfigs().get(source);
+        this.rateLimiter = RateLimiter.create(parserConfig.getRateLimitPerSecond());
+    }
 
     protected abstract Set<String> getPageUrls(Document doc, LocalDateTime latestPublishedAt);
 
     protected abstract Optional<NewsArticle> parseNewsArticle(Document doc, Category category);
 
     public void parse(Map<Category, LocalDateTime> latestPublishedAtByCategory) {
-        for (Map.Entry<Category, Set<String>> entry : urlMap.entrySet()) {
+        for (Map.Entry<Category, Set<String>> entry : parserConfig.getCategoryUrls().entrySet()) {
             Category category = entry.getKey();
             LocalDateTime latestPublishedAt = latestPublishedAtByCategory.get(category);
-
-            for (String path : entry.getValue()) {
-                int saved = processPath(path, category, latestPublishedAt);
-                log.info("Saved {} new articles from {}", saved, category);
-            }
+            for (String path : entry.getValue()) processPath(path, category, latestPublishedAt);
         }
     }
 
-    private int processPath(String path, Category category, LocalDateTime latestPublishedAt) {
-        int saved = 0;
+    private void processPath(String path, Category category, LocalDateTime latestPublishedAt) {
         int fetchedPages = 0;
         Integer firstPageHash = null;
         boolean endReached = false;
@@ -59,8 +77,8 @@ public abstract class NewsParser {
         while (!endReached) {
             Set<String> articleUrls = new HashSet<>();
 
-            int startPage = fetchedPages + INITIAL_PAGE;
-            int endPage = fetchedPages + INITIAL_PAGE + 19;
+            int startPage = fetchedPages + initialPage;
+            int endPage = fetchedPages + initialPage + 19;
 
             List<Document> pages = fetchPages(path, startPage, endPage);
             if (pages.isEmpty()) break;
@@ -70,7 +88,7 @@ public abstract class NewsParser {
                 Document doc = pages.get(i);
                 int hash = doc.text().hashCode();
 
-                if (pageNum == INITIAL_PAGE) {
+                if (pageNum == initialPage) {
                     firstPageHash = hash;
                 } else if (hash == firstPageHash) {
                     endReached = true;
@@ -86,10 +104,11 @@ public abstract class NewsParser {
             }
 
             List<NewsArticle> articles = fetchAndParseArticles(articleUrls, category, latestPublishedAt);
-            saved += parsingService.saveArticles(articles);
+            int saved = parsingService.saveArticles(articles);
             fetchedPages += pages.size();
+
+            if (saved > 0) log.info("Saved {} new articles from {}", saved, category);
         }
-        return saved;
     }
 
     private List<Document> fetchPages(String path, int startPage, int endPage) {
@@ -106,7 +125,7 @@ public abstract class NewsParser {
     }
 
     protected Optional<Document> fetchPage(String path, int page) {
-        String url = URL_TEMPLATE.formatted(path, page);
+        String url = urlTemplate.formatted(path, page);
         return pageFetcher.downloadPage(pageFetcher.fetchGet(url), url, rateLimiter);
     }
 

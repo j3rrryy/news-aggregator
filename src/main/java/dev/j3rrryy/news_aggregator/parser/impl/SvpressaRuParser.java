@@ -1,11 +1,11 @@
 package dev.j3rrryy.news_aggregator.parser.impl;
 
-import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.parser.NewsParser;
+import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.parser.service.PageFetcher;
 import dev.j3rrryy.news_aggregator.parser.service.ParsingService;
 import dev.j3rrryy.news_aggregator.parser.service.ParsingStatusManager;
@@ -30,23 +30,16 @@ public class SvpressaRuParser extends NewsParser {
 
     private static final int INITIAL_PAGE = 1;
     private static final String URL_TEMPLATE = "https://svpressa.ru/%s/?page=%s";
-    private static final Map<Category, Set<String>> urlMap = Map.of(
-            Category.POLITICS, Set.of("politic"),
-            Category.ECONOMICS, Set.of("economy"),
-            Category.SOCIETY, Set.of("society"),
-            Category.SPORT, Set.of("sport"),
-            Category.SCIENCE_TECH, Set.of("science")
-    );
     private static final Map<String, Integer> monthMap = Map.ofEntries(
             entry("января", 1), entry("февраля", 2), entry("марта", 3),
             entry("апреля", 4), entry("мая", 5), entry("июня", 6),
             entry("июля", 7), entry("августа", 8), entry("сентября", 9),
             entry("октября", 10), entry("ноября", 11), entry("декабря", 12)
     );
-    private static final RateLimiter rateLimiter = RateLimiter.create(10);
 
     @Autowired
     public SvpressaRuParser(
+            ParserProperties parserProperties,
             PageFetcher pageFetcher,
             ParsingStatusManager parsingStatusManager,
             ExecutorService ioExecutor,
@@ -54,21 +47,16 @@ public class SvpressaRuParser extends NewsParser {
             ParsingService parsingService
     ) {
         super(
-                pageFetcher,
-                parsingStatusManager,
+                Source.SVPRESSA_RU,
                 INITIAL_PAGE,
                 URL_TEMPLATE,
-                rateLimiter,
+                pageFetcher,
                 ioExecutor,
                 cpuExecutor,
                 parsingService,
-                urlMap
+                parserProperties,
+                parsingStatusManager
         );
-    }
-
-    @Override
-    public Source getSource() {
-        return Source.SVPRESSA_RU;
     }
 
     @Override

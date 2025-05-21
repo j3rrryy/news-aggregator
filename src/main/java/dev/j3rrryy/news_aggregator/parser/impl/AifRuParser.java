@@ -1,11 +1,11 @@
 package dev.j3rrryy.news_aggregator.parser.impl;
 
-import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.parser.NewsParser;
+import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.parser.service.PageFetcher;
 import dev.j3rrryy.news_aggregator.parser.service.ParsingService;
 import dev.j3rrryy.news_aggregator.parser.service.ParsingStatusManager;
@@ -32,36 +32,20 @@ import java.util.stream.Collectors;
 public class AifRuParser extends NewsParser {
 
     private static final int INITIAL_PAGE = 1;
-    private static final String URL_TEMPLATE = "https://aif.ru/%s";
     private static final String BODY_TEMPLATE = "page=%s";
+    private static final String URL_TEMPLATE = "https://aif.ru/%s";
     private static final String SUMMARY_AND_CONTENT_SELECTOR = """
             div.article_text > p, div.article_text > h1, div.article_text > h2, div.article_text > h3,
             div.article_text > h4, div.article_text > h5, div.article_text > h6
             """;
-    private static final Map<Category, Set<String>> urlMap = Map.of(
-            Category.POLITICS, Set.of("politics/russia", "politics/world"),
-            Category.ECONOMICS, Set.of("money/economy", "money/business", "money/market"),
-            Category.SOCIETY, Set.of("society/people"),
-            Category.SPORT, Set.of(
-                    "sport/football",
-                    "sport/hockey",
-                    "sport/winter",
-                    "sport/summer",
-                    "sport/other",
-                    "sport/olymp",
-                    "sport/structure",
-                    "sport/person"
-            ),
-            Category.SCIENCE_TECH, Set.of("techno/industry", "techno/technology", "society/science")
-    );
     private static final DateTimeFormatter dateTimeFormatter = new DateTimeFormatterBuilder()
             .appendOptional(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"))
             .appendOptional(DateTimeFormatter.ofPattern("HH:mm"))
             .toFormatter();
-    private static final RateLimiter rateLimiter = RateLimiter.create(40);
 
     @Autowired
     public AifRuParser(
+            ParserProperties parserProperties,
             PageFetcher pageFetcher,
             ParsingStatusManager parsingStatusManager,
             ExecutorService ioExecutor,
@@ -69,21 +53,16 @@ public class AifRuParser extends NewsParser {
             ParsingService parsingService
     ) {
         super(
-                pageFetcher,
-                parsingStatusManager,
+                Source.AIF_RU,
                 INITIAL_PAGE,
                 URL_TEMPLATE,
-                rateLimiter,
+                pageFetcher,
                 ioExecutor,
                 cpuExecutor,
                 parsingService,
-                urlMap
+                parserProperties,
+                parsingStatusManager
         );
-    }
-
-    @Override
-    public Source getSource() {
-        return Source.AIF_RU;
     }
 
     @Override
