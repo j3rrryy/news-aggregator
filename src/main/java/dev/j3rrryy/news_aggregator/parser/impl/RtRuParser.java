@@ -6,9 +6,7 @@ import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.parser.NewsParser;
 import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
-import dev.j3rrryy.news_aggregator.parser.service.PageFetcher;
-import dev.j3rrryy.news_aggregator.parser.service.ParsingService;
-import dev.j3rrryy.news_aggregator.parser.service.ParsingStatusManager;
+import dev.j3rrryy.news_aggregator.parser.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -38,12 +36,13 @@ public class RtRuParser extends NewsParser {
 
     @Autowired
     public RtRuParser(
-            ParserProperties parserProperties,
             PageFetcher pageFetcher,
-            ParsingStatusManager parsingStatusManager,
             ExecutorService ioExecutor,
             ExecutorService cpuExecutor,
-            ParsingService parsingService
+            ParsingService parsingService,
+            ParserProperties parserProperties,
+            ParsingStateStore parsingStateStore,
+            ParsingStatusManager parsingStatusManager
     ) {
         super(
                 Source.RT_RU,
@@ -54,6 +53,7 @@ public class RtRuParser extends NewsParser {
                 cpuExecutor,
                 parsingService,
                 parserProperties,
+                parsingStateStore,
                 parsingStatusManager
         );
     }
