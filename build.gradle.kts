@@ -35,6 +35,7 @@ dependencies {
     implementation("org.flywaydb:flyway-database-postgresql")
     implementation("org.postgresql:postgresql")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8")
+    implementation("org.apache.commons:commons-csv:1.14.0")
     implementation("com.google.guava:guava:33.4.8-jre")
     implementation("org.jsoup:jsoup:1.19.1")
     implementation("org.mapstruct:mapstruct:1.6.3")

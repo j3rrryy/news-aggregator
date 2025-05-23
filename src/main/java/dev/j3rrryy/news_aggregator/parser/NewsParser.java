@@ -93,11 +93,7 @@ public abstract class NewsParser {
             }
 
             Set<String> urls = getPageUrls(optDoc.get(), null);
-            if (urls.isEmpty() && parsingStatusManager.isStopRequested()) break;
-            if (urls.isEmpty()) {
-                parsingStateStore.updateCurrentPage(source, category, path, ++page);
-                continue;
-            }
+            if (urls.isEmpty()) break;
 
             int saved = parsingService.saveArticles(fetchAndParseArticles(urls, category, null));
             if (saved == 0) break;

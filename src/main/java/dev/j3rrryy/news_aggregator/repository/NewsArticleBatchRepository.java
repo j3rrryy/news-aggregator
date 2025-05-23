@@ -24,18 +24,18 @@ public class NewsArticleBatchRepository {
             if (article.getId() == null) article.setId(UUID.randomUUID());
         });
 
-        int[] inserts = insertArticlesIfNotExists(articles);
+        int[] inserts = insertArticlesIfNotExist(articles);
         List<NewsArticle> insertedArticles = IntStream.range(0, inserts.length)
                 .filter(i -> inserts[i] > 0)
                 .mapToObj(articles::get)
                 .toList();
 
-        insertKeywordsIfNotExists(insertedArticles);
-        insertMediaUrlsIfNotExists(insertedArticles);
+        insertKeywordsIfNotExist(insertedArticles);
+        insertMediaUrlsIfNotExist(insertedArticles);
         return insertedArticles.size();
     }
 
-    private int[] insertArticlesIfNotExists(List<NewsArticle> articles) {
+    private int[] insertArticlesIfNotExist(List<NewsArticle> articles) {
         if (articles.isEmpty()) return new int[0];
 
         String sql = """
@@ -81,7 +81,7 @@ public class NewsArticleBatchRepository {
         });
     }
 
-    private void insertKeywordsIfNotExists(List<NewsArticle> articles) {
+    private void insertKeywordsIfNotExist(List<NewsArticle> articles) {
         List<Object[]> batch = articles.stream()
                 .flatMap(article -> article.getKeywords().stream()
                         .map(kw -> new Object[]{article.getId(), kw})
@@ -97,7 +97,7 @@ public class NewsArticleBatchRepository {
         jdbcTemplate.batchUpdate(sql, batch);
     }
 
-    private void insertMediaUrlsIfNotExists(List<NewsArticle> articles) {
+    private void insertMediaUrlsIfNotExist(List<NewsArticle> articles) {
         List<Object[]> batch = articles.stream()
                 .flatMap(article -> article.getMediaUrls().stream()
                         .map(url -> new Object[]{article.getId(), url})

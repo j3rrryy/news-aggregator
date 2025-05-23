@@ -105,10 +105,10 @@ public class AifRuParser extends NewsParser {
             String title = Objects.requireNonNull(doc.selectFirst("h1[itemprop=headline]"))
                     .text()
                     .trim();
-            String summary = Objects.requireNonNull(doc.selectFirst(SUMMARY_AND_CONTENT_SELECTOR))
+            String summary = doc.select(SUMMARY_AND_CONTENT_SELECTOR)
                     .text()
                     .trim()
-                    .replaceFirst("^(.*?[.!?]).*", "$1");
+                    .replaceFirst("^(.*?\\.)(?:\\s+|$).*", "$1");
             String content = doc.select(SUMMARY_AND_CONTENT_SELECTOR).stream()
                     .map(Element::text)
                     .map(String::trim)

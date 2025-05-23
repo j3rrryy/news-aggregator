@@ -88,11 +88,11 @@ public class RtRuParser extends NewsParser {
             String title = Objects.requireNonNull(doc.selectFirst("h1.article__heading"))
                     .text()
                     .trim();
-            String summary = Objects.requireNonNull(doc.selectFirst("div.article__summary"))
+            String summary = doc.select("div.article__summary")
                     .text()
                     .trim()
-                    .replaceFirst("^(.*?[.!?]).*", "$1");
-            String content = Objects.requireNonNull(doc.selectFirst("div.article__summary")).text().trim()
+                    .replaceFirst("^(.*?\\.)(?:\\s+|$).*", "$1");
+            String content = doc.select("div.article__summary").text().trim()
                     + "\n\n"
                     + doc.select(CONTENT_SELECTOR).stream()
                     .map(Element::text)

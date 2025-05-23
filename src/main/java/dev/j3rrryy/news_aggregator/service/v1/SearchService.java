@@ -14,9 +14,7 @@ import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import dev.j3rrryy.news_aggregator.specification.NewsArticleSpecs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +24,8 @@ import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+
+import static dev.j3rrryy.news_aggregator.utils.SortResolver.resolveSort;
 
 @Service
 @RequiredArgsConstructor
@@ -58,26 +58,26 @@ public class SearchService {
             String cursor,
             int size
     ) {
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) throw new FromDateAfterToDateException();
+        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+            throw new FromDateAfterToDateException();
+        }
 
         CursorData cursorData = parseCursor(cursor);
-        Sort sort = resolveSort(sortField, sortDirection);
-
         Specification<NewsArticle> spec = NewsArticleSpecs.filterAll(
                 query, dateFrom, dateTo, categories, sources, statuses,
                 keywords, cursorData.publishedAt(), cursorData.id()
         );
 
-        Pageable pageable = PageRequest.of(0, size + 1, sort);
-        List<NewsArticle> articles = newsArticleRepository.findAll(spec, pageable).getContent();
+        Sort sort = resolveSort(sortField, sortDirection);
+        Pageable pageable = PageRequest.of(0, size, sort);
+        Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
 
-        List<NewsArticleSummary> articleSummaries = articles.stream()
-                .limit(size)
+        List<NewsArticleSummary> articleSummaries = slice.getContent().stream()
                 .map(searchMapper::toSummary)
                 .toList();
 
         String nextCursor = null;
-        if (articles.size() > size) {
+        if (slice.hasNext() && !articleSummaries.isEmpty()) {
             NewsArticleSummary last = articleSummaries.getLast();
             nextCursor = last.publishedAt() + "|" + last.id();
         }
@@ -106,24 +106,6 @@ public class SearchService {
         } catch (DateTimeParseException | IllegalArgumentException e) {
             throw new InvalidCursorFormatException(cursor);
         }
-    }
-
-    private Sort resolveSort(SortField sortField, SortDirection sortDirection) {
-        SortField safeField = (sortField == null) ? SortField.PUBLISHED_AT : sortField;
-        SortDirection safeDirection = (sortDirection == null) ? SortDirection.DESC : sortDirection;
-
-        String property = switch (safeField) {
-            case ID -> "id";
-            case TITLE -> "title";
-            case SUMMARY -> "summary";
-            case CONTENT -> "content";
-            case CATEGORY -> "category";
-            case URL -> "url";
-            case STATUS -> "status";
-            case PUBLISHED_AT -> "publishedAt";
-            case SOURCE -> "source";
-        };
-        return Sort.by(Sort.Direction.fromString(safeDirection.name()), property);
     }
 
 }

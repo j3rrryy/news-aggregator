@@ -90,10 +90,10 @@ public class SvpressaRuParser extends NewsParser {
             String title = Objects.requireNonNull(doc.selectFirst("h1.b-text__title"))
                     .text()
                     .trim();
-            String summary = Objects.requireNonNull(doc.selectFirst("div.b-text__block > p"))
+            String summary = doc.select("div.b-text__block > p")
                     .text()
                     .trim()
-                    .replaceFirst("^(.*?[.!?]).*", "$1");
+                    .replaceFirst("^(.*?\\.)(?:\\s+|$).*", "$1");
             String content = doc.select("div.b-text__block > p").stream()
                     .map(Element::text)
                     .map(String::trim)
