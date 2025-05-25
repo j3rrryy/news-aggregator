@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record NewsArticleFull(
+public record NewsArticleFullDto(
         UUID id,
         String title,
         String summary,

@@ -1,9 +1,9 @@
 package dev.j3rrryy.news_aggregator.service.v1;
 
-import dev.j3rrryy.news_aggregator.dto.request.CursorData;
-import dev.j3rrryy.news_aggregator.dto.response.CursorPage;
-import dev.j3rrryy.news_aggregator.dto.response.NewsArticleFull;
-import dev.j3rrryy.news_aggregator.dto.response.NewsArticleSummary;
+import dev.j3rrryy.news_aggregator.dto.request.CursorDataDto;
+import dev.j3rrryy.news_aggregator.dto.response.CursorPageDto;
+import dev.j3rrryy.news_aggregator.dto.response.NewsArticleFullDto;
+import dev.j3rrryy.news_aggregator.dto.response.NewsArticleSummaryDto;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.*;
 import dev.j3rrryy.news_aggregator.exceptions.ArticleNotFoundException;
@@ -45,7 +45,7 @@ public class SearchService {
                     "#sortField + '_' + #sortDirection + '_' + #cursor + '_' + #size",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public CursorPage<NewsArticleSummary> searchNews(
+    public CursorPageDto<NewsArticleSummaryDto> searchNews(
             String query,
             LocalDateTime dateFrom,
             LocalDateTime dateTo,
@@ -62,7 +62,7 @@ public class SearchService {
             throw new FromDateAfterToDateException();
         }
 
-        CursorData cursorData = parseCursor(cursor);
+        CursorDataDto cursorData = parseCursor(cursor);
         Specification<NewsArticle> spec = NewsArticleSpecs.filterAll(
                 query, dateFrom, dateTo, categories, sources, statuses,
                 keywords, cursorData.publishedAt(), cursorData.id()
@@ -72,16 +72,16 @@ public class SearchService {
         Pageable pageable = PageRequest.of(0, size, sort);
         Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
 
-        List<NewsArticleSummary> articleSummaries = slice.getContent().stream()
+        List<NewsArticleSummaryDto> articleSummaries = slice.getContent().stream()
                 .map(searchMapper::toSummary)
                 .toList();
 
         String nextCursor = null;
         if (slice.hasNext() && !articleSummaries.isEmpty()) {
-            NewsArticleSummary last = articleSummaries.getLast();
+            NewsArticleSummaryDto last = articleSummaries.getLast();
             nextCursor = last.publishedAt() + "|" + last.id();
         }
-        return new CursorPage<>(articleSummaries, nextCursor);
+        return new CursorPageDto<>(articleSummaries, nextCursor);
     }
 
     @Cacheable(
@@ -89,20 +89,20 @@ public class SearchService {
             key = "#root.methodName + '_' + #id",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public NewsArticleFull getById(UUID id) {
+    public NewsArticleFullDto getById(UUID id) {
         return newsArticleRepository.findById(id)
                 .map(searchMapper::toFull)
                 .orElseThrow(() -> new ArticleNotFoundException(id));
     }
 
-    private CursorData parseCursor(String cursor) {
+    private CursorDataDto parseCursor(String cursor) {
         if (cursor == null || cursor.isBlank()) {
-            return new CursorData(null, null);
+            return new CursorDataDto(null, null);
         }
         try {
             String[] parts = cursor.split("\\|");
             if (parts.length != 2) throw new InvalidCursorFormatException(cursor);
-            return new CursorData(LocalDateTime.parse(parts[0]), UUID.fromString(parts[1]));
+            return new CursorDataDto(LocalDateTime.parse(parts[0]), UUID.fromString(parts[1]));
         } catch (DateTimeParseException | IllegalArgumentException e) {
             throw new InvalidCursorFormatException(cursor);
         }
