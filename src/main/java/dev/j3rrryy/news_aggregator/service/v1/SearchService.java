@@ -37,7 +37,7 @@ public class SearchService {
 
     @Cacheable(
             value = "newsSearch",
-            key = "#root.methodName + '_' + #query + '_' + #dateFrom + '_' + #dateTo + '_' + " +
+            key = "#root.methodName + ':' + #query + '_' + #dateFrom + '_' + #dateTo + '_' + " +
                     "T(java.util.Objects).hash(#categories != null ? new java.util.TreeSet(#categories) : null) + '_' + " +
                     "T(java.util.Objects).hash(#sources != null ? new java.util.TreeSet(#sources) : null) + '_' + " +
                     "T(java.util.Objects).hash(#statuses != null ? new java.util.TreeSet(#statuses) : null) + '_' + " +
@@ -86,7 +86,7 @@ public class SearchService {
 
     @Cacheable(
             value = "newsById",
-            key = "#root.methodName + '_' + #id",
+            key = "#root.methodName + ':' + #id",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public NewsArticleFullDto getById(UUID id) {

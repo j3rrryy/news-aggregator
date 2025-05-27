@@ -50,7 +50,7 @@ public class AnalyticsService {
 
     @Cacheable(
             value = "newsTopFrequentKeywords",
-            key = "#root.methodName + '_' + #limit",
+            key = "#root.methodName + ':' + #limit",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public List<KeywordFrequencyDto> getTopFrequentKeywords(int limit) {
@@ -62,7 +62,7 @@ public class AnalyticsService {
 
     @Cacheable(
             value = "newsKeywordTrend",
-            key = "#root.methodName + '_' + #keyword",
+            key = "#root.methodName + ':' + #keyword",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public List<KeywordDateCountDto> getKeywordTrend(String keyword) {
@@ -77,7 +77,7 @@ public class AnalyticsService {
 
     @Cacheable(
             value = "newsTrendingTopics",
-            key = "#root.methodName + '_' + #fromDate + '_' + #toDate + '_' + #limit",
+            key = "#root.methodName + ':' + #fromDate + '_' + #toDate + '_' + #limit",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public List<TrendingTopicDto> getTrendingTopics(LocalDateTime fromDate, LocalDateTime toDate, int limit) {
