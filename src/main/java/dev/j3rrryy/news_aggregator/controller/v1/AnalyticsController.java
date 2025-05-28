@@ -65,7 +65,7 @@ public class AnalyticsController {
             LocalDateTime toDate,
 
             @RequestParam(defaultValue = "10")
-            @Positive(message = "Limit must be a > 0")
+            @Positive(message = "Limit must be > 0")
             int limit
     ) {
         return analyticsService.getTrendingTopics(fromDate, toDate, limit);
