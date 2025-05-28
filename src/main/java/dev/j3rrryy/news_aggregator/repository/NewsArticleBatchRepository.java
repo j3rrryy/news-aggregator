@@ -47,31 +47,31 @@ public class NewsArticleBatchRepository {
 
         return jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
             @Override
-            public void setValues(@NonNull PreparedStatement preparedStatement, int i) throws SQLException {
+            public void setValues(@NonNull PreparedStatement ps, int i) throws SQLException {
                 NewsArticle article = articles.get(i);
-                preparedStatement.setObject(1, article.getId(), Types.OTHER);
-                preparedStatement.setString(2, article.getTitle());
-                preparedStatement.setString(3, article.getSummary());
-                preparedStatement.setString(4, article.getContent());
+                ps.setObject(1, article.getId(), Types.OTHER);
+                ps.setString(2, article.getTitle());
+                ps.setString(3, article.getSummary());
+                ps.setString(4, article.getContent());
 
                 PGobject categoryObj = new PGobject();
                 categoryObj.setType("category");
                 categoryObj.setValue(article.getCategory().name());
-                preparedStatement.setObject(5, categoryObj);
+                ps.setObject(5, categoryObj);
 
-                preparedStatement.setString(6, article.getUrl());
+                ps.setString(6, article.getUrl());
 
                 PGobject statusObj = new PGobject();
                 statusObj.setType("status");
                 statusObj.setValue(article.getStatus().name());
-                preparedStatement.setObject(7, statusObj);
+                ps.setObject(7, statusObj);
 
-                preparedStatement.setTimestamp(8, Timestamp.valueOf(article.getPublishedAt()));
+                ps.setTimestamp(8, Timestamp.valueOf(article.getPublishedAt()));
 
                 PGobject sourceObj = new PGobject();
                 sourceObj.setType("source");
                 sourceObj.setValue(article.getSource().name());
-                preparedStatement.setObject(9, sourceObj);
+                ps.setObject(9, sourceObj);
             }
 
             @Override

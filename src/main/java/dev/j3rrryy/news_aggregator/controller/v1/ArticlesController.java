@@ -30,8 +30,8 @@ public class ArticlesController {
             @ApiResponse(responseCode = "200", description = "News articles marked as 'deleted' successfully"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public ArticlesAffectedDto markAsDeleted(@RequestBody @Valid MarkDeletedDto markDeletedDto) {
-        return articlesService.markAsDeleted(markDeletedDto);
+    public ArticlesAffectedDto markAsDeleted(@RequestBody @Valid MarkDeletedDto dto) {
+        return articlesService.markAsDeleted(dto);
     }
 
     @DeleteMapping("/marked")

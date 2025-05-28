@@ -62,8 +62,8 @@ public class ParserController {
             @ApiResponse(responseCode = "204", description = "Source statuses updated successfully"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public void patchSourceStatuses(@RequestBody NewsSourceStatusesRequestDto newsSourceStatusesRequestDto) {
-        parserService.patchSourceStatuses(newsSourceStatusesRequestDto);
+    public void patchSourceStatuses(@RequestBody NewsSourceStatusesRequestDto dto) {
+        parserService.patchSourceStatuses(dto);
     }
 
     @GetMapping("/auto-parsing/status")
@@ -92,8 +92,8 @@ public class ParserController {
             @ApiResponse(responseCode = "204", description = "Interval updated successfully"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public void setAutoParsingInterval(@RequestBody @Valid AutoParsingIntervalDto autoParsingIntervalDto) {
-        parserService.setAutoParsingInterval(autoParsingIntervalDto);
+    public void setAutoParsingInterval(@RequestBody @Valid AutoParsingIntervalDto dto) {
+        parserService.setAutoParsingInterval(dto);
     }
 
 }

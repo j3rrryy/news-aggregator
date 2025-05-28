@@ -49,9 +49,9 @@ public class ParserService {
         return newsSourceStatusesMapper.toResponseDto(parserProperties.getSourceStatuses());
     }
 
-    public void patchSourceStatuses(NewsSourceStatusesRequestDto newsSourceStatusesRequestDto) {
+    public void patchSourceStatuses(NewsSourceStatusesRequestDto dto) {
         Map<Source, Boolean> currentStatus = parserProperties.getSourceStatuses();
-        newsSourceStatusesMapper.updateStatusMap(newsSourceStatusesRequestDto, currentStatus);
+        newsSourceStatusesMapper.updateStatusMap(dto, currentStatus);
         parserProperties.setSourceStatuses(currentStatus);
     }
 
@@ -62,8 +62,8 @@ public class ParserService {
         );
     }
 
-    public void setAutoParsingInterval(AutoParsingIntervalDto autoParsingIntervalDto) {
-        parserProperties.setAutoParsingInterval(autoParsingIntervalDto.autoParsingInterval());
+    public void setAutoParsingInterval(AutoParsingIntervalDto dto) {
+        parserProperties.setAutoParsingInterval(dto.autoParsingInterval());
     }
 
 }

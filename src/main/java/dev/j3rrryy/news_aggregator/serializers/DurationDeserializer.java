@@ -18,8 +18,8 @@ public class DurationDeserializer extends JsonDeserializer<Duration> {
     private static final Pattern durationPattern = Pattern.compile("(\\d+)d(\\d+)h(\\d+)m");
 
     @Override
-    public Duration deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-        String value = p.getText().trim();
+    public Duration deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
+        String value = jsonParser.getText().trim();
         Matcher matcher = durationPattern.matcher(value);
 
         if (matcher.matches()) {

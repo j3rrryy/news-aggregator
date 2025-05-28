@@ -32,10 +32,10 @@ public class ArticlesService {
     }
 
     @Transactional
-    public ArticlesAffectedDto markAsDeleted(MarkDeletedDto markDeletedDto) {
+    public ArticlesAffectedDto markAsDeleted(MarkDeletedDto dto) {
         cacheManagerService.clearAllCaches();
         return new ArticlesAffectedDto(
-                newsArticleRepository.markAsDeletedByPublishedAtBefore(markDeletedDto.olderThan())
+                newsArticleRepository.markAsDeletedByPublishedAtBefore(dto.olderThan())
         );
     }
 

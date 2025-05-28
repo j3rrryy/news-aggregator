@@ -12,10 +12,12 @@ import java.time.Duration;
 public class DurationSerializer extends JsonSerializer<Duration> {
 
     @Override
-    public void serialize(Duration value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
-        long days = value.toDays();
-        long hours = value.minusDays(days).toHours();
-        long minutes = value.minusDays(days).minusHours(hours).toMinutes();
+    public void serialize(
+            Duration duration, JsonGenerator jsonGenerator, SerializerProvider provider
+    ) throws IOException {
+        long days = duration.toDays();
+        long hours = duration.minusDays(days).toHours();
+        long minutes = duration.minusDays(days).minusHours(hours).toMinutes();
 
         StringBuilder stringBuilder = new StringBuilder();
         if (days > 0) stringBuilder.append(days).append("d");
@@ -23,7 +25,7 @@ public class DurationSerializer extends JsonSerializer<Duration> {
         if (minutes > 0) stringBuilder.append(minutes).append("m");
         if (stringBuilder.isEmpty()) stringBuilder.append("0m");
 
-        gen.writeString(stringBuilder.toString());
+        jsonGenerator.writeString(stringBuilder.toString());
     }
 
 }
