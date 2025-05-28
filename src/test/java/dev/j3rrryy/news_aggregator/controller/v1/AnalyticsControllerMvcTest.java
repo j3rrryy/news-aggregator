@@ -28,8 +28,8 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getCategoryCounts() throws Exception {
-        CategoryCountsDto dto = new CategoryCountsDto(0, 1, 2, 3, 4);
-        given(analyticsService.getCategoryCounts()).willReturn(dto);
+        CategoryCountsDto response = new CategoryCountsDto(0, 1, 2, 3, 4);
+        given(analyticsService.getCategoryCounts()).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/categories")
                         .accept(MediaType.APPLICATION_JSON))
@@ -44,11 +44,11 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getTopFrequentKeywords() throws Exception {
-        List<KeywordFrequencyDto> dtos = List.of(
+        List<KeywordFrequencyDto> response = List.of(
                 new KeywordFrequencyDto("java", 6),
                 new KeywordFrequencyDto("spring", 12)
         );
-        given(analyticsService.getTopFrequentKeywords(10)).willReturn(dtos);
+        given(analyticsService.getTopFrequentKeywords(10)).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/top")
                         .param("limit", "10")
@@ -85,11 +85,11 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getKeywordTrend() throws Exception {
-        List<KeywordDateCountDto> trend = List.of(
+        List<KeywordDateCountDto> response = List.of(
                 new KeywordDateCountDto(LocalDate.of(2025, 5, 1), 5),
                 new KeywordDateCountDto(LocalDate.of(2025, 2, 1), 7)
         );
-        given(analyticsService.getKeywordTrend("java")).willReturn(trend);
+        given(analyticsService.getKeywordTrend("java")).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/trend/java")
                         .accept(MediaType.APPLICATION_JSON))
@@ -103,13 +103,13 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getTrendingTopics() throws Exception {
-        List<TrendingTopicDto> topics = List.of(
+        List<TrendingTopicDto> response = List.of(
                 new TrendingTopicDto("java", 10, 3, 7),
                 new TrendingTopicDto("spring", 8, 5, 3)
         );
         LocalDateTime from = LocalDateTime.of(2025, 5, 1, 0, 0);
         LocalDateTime to = LocalDateTime.of(2025, 5, 7, 0, 0);
-        given(analyticsService.getTrendingTopics(from, to, 10)).willReturn(topics);
+        given(analyticsService.getTrendingTopics(from, to, 10)).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/trending")
                         .param("fromDate", "2025-05-01T00:00:00")
