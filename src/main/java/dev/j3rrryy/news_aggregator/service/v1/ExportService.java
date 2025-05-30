@@ -41,6 +41,139 @@ import static org.springframework.web.util.HtmlUtils.htmlEscape;
 public class ExportService {
 
     private static final DateTimeFormatter htmlDateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy, HH:mm");
+    private static final String HTML_HEAD = """
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                        background-color: #f8f8f8;
+                        max-width: 992px;
+                        margin: 0 auto;
+                    }
+            
+                    .article {
+                        background: #ffffff;
+                        border: 1px solid #ddd;
+                        border-radius: 10px;
+                        padding: 20px;
+                        margin-bottom: 24px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                        transition: box-shadow 0.3s ease, transform 0.3s ease;
+                    }
+            
+                    .article:hover {
+                        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+                        transform: translateY(-2px);
+                    }
+            
+                    h2 {
+                        margin-bottom: 6px;
+                    }
+            
+                    a {
+                        font-weight: bold;
+                        text-decoration: none;
+                        color: #0066cc;
+                    }
+            
+                    a:hover {
+                        text-decoration: underline;
+                    }
+            
+                    .summary {
+                        margin-top: 8px;
+                        margin-bottom: 16px;
+                    }
+            
+                    .meta {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        font-size: 0.85em;
+                        color: #555;
+                        margin-top: 8px;
+                    }
+            
+                    .meta span {
+                        background-color: #f0f0f0;
+                        padding: 4px 8px;
+                        border-radius: 6px;
+                        align-content: center;
+                    }
+            
+                    .meta-category {
+                        background-color: #e0ecff;
+                        color: #004a99;
+                        font-weight: bold;
+                        text-transform: capitalize;
+                    }
+            
+                    .meta-date {
+                        background-color: #ffe4cc;
+                    }
+            
+                    .meta-date::before {
+                        content: "🗓️ ";
+                    }
+            
+                    .meta-source {
+                        font-style: italic;
+                        background-color: #e6f5d0;
+                        color: #3b5d23;
+                    }
+            
+                    .keywords {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 6px;
+                        margin-top: 8px;
+                    }
+            
+                    .keywords span {
+                        background-color: #f3f3f3;
+                        color: #555;
+                        padding: 4px 8px;
+                        border-radius: 6px;
+                        font-size: 0.8em;
+                        white-space: nowrap;
+                    }
+            
+                    .meta, .content, .keywords {
+                        margin-top: 8px;
+                    }
+            
+                    .media img {
+                        width: 100%;
+                        max-width: 300px;
+                        border-radius: 8px;
+                        margin: 5px;
+                        height: auto;
+                        object-fit: cover;
+                        box-sizing: border-box;
+                    }
+            
+                    .media {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                    }
+            
+                    .content {
+                        margin-top: 25px;
+                        white-space: pre-wrap;
+                        border-left: 3px solid #eee;
+                        padding-left: 12px;
+                        color: #444;
+                    }
+                </style>
+                <title>Exported News</title>
+            </head>
+            <body>
+            """;
+    private static final String HTML_FOOTER = "</body></html>";
 
     private final SearchMapper searchMapper;
     private final NewsArticleRepository newsArticleRepository;
@@ -182,138 +315,7 @@ public class ExportService {
             boolean includeContent
     ) {
         try (Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
-            writer.write("""
-                    <html>
-                    <head>
-                        <meta charset="UTF-8">
-                        <style>
-                            body {
-                                font-family: Arial, sans-serif;
-                                padding: 20px;
-                                background-color: #f8f8f8;
-                                max-width: 992px;
-                                margin: 0 auto;
-                            }
-                    
-                            .article {
-                                background: #ffffff;
-                                border: 1px solid #ddd;
-                                border-radius: 10px;
-                                padding: 20px;
-                                margin-bottom: 24px;
-                                box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                                transition: box-shadow 0.3s ease, transform 0.3s ease;
-                            }
-                    
-                            .article:hover {
-                                box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-                                transform: translateY(-2px);
-                            }
-                    
-                            h2 {
-                                margin-bottom: 6px;
-                            }
-                    
-                            a {
-                                font-weight: bold;
-                                text-decoration: none;
-                                color: #0066cc;
-                            }
-                    
-                            a:hover {
-                                text-decoration: underline;
-                            }
-                    
-                            .summary {
-                                margin-top: 8px;
-                                margin-bottom: 16px;
-                            }
-                    
-                            .meta {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 10px;
-                                font-size: 0.85em;
-                                color: #555;
-                                margin-top: 8px;
-                            }
-                    
-                            .meta span {
-                                background-color: #f0f0f0;
-                                padding: 4px 8px;
-                                border-radius: 6px;
-                                align-content: center;
-                            }
-                    
-                            .meta-category {
-                                background-color: #e0ecff;
-                                color: #004a99;
-                                font-weight: bold;
-                                text-transform: capitalize;
-                            }
-                    
-                            .meta-date {
-                                background-color: #ffe4cc;
-                            }
-                    
-                            .meta-date::before {
-                                content: "🗓️ ";
-                            }
-                    
-                            .meta-source {
-                                font-style: italic;
-                                background-color: #e6f5d0;
-                                color: #3b5d23;
-                            }
-                    
-                            .keywords {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 6px;
-                                margin-top: 8px;
-                            }
-                    
-                            .keywords span {
-                                background-color: #f3f3f3;
-                                color: #555;
-                                padding: 4px 8px;
-                                border-radius: 6px;
-                                font-size: 0.8em;
-                                white-space: nowrap;
-                            }
-                    
-                            .meta, .content, .keywords {
-                                margin-top: 8px;
-                            }
-                    
-                            .media img {
-                                width: 100%;
-                                max-width: 300px;
-                                border-radius: 8px;
-                                margin: 5px;
-                                height: auto;
-                                object-fit: cover;
-                                box-sizing: border-box;
-                            }
-                    
-                            .media {
-                                display: flex;
-                                flex-wrap: wrap;
-                                gap: 10px;
-                            }
-                    
-                            .content {
-                                margin-top: 25px;
-                                white-space: pre-wrap;
-                                border-left: 3px solid #eee;
-                                padding-left: 12px;
-                                color: #444;
-                            }
-                        </style>
-                        <title>Exported News</title>
-                    </head>
-                    <body>
-                    """);
+            writer.write(HTML_HEAD);
 
             int page = 0;
             boolean hasNext;
@@ -324,50 +326,76 @@ public class ExportService {
                 hasNext = slice.hasNext();
 
                 for (NewsArticle article : slice.getContent()) {
-                    writer.write("<div class='article'>");
-
-                    writer.write("<div class='media'>");
-                    for (String mediaUrl : article.getMediaUrls()) {
-                        writer.write("<img src=\"" + htmlEscape(mediaUrl) + "\" alt=\"media\" loading=\"lazy\"/>");
-                    }
-                    writer.write("</div>");
-
-                    writer.write("<h2><a href=\"" + article.getUrl() +
-                            "\" target=\"_blank\" rel=\"noopener noreferrer\">" +
-                            htmlEscape(article.getTitle()) + "</a></h2>");
-                    writer.write("<div class='summary'>" + htmlEscape(article.getSummary().trim()) + "</div>");
-
-                    writer.write("<div class='meta'>");
-                    writer.write("<span class='meta-date'>" +
-                            htmlEscape(article.getPublishedAt().format(htmlDateTimeFormatter)) +
-                            "</span>");
-
-                    String category = article.getCategory().name().toLowerCase().replace('_', '-');
-                    writer.write("<span class='meta-category badge'>" + htmlEscape(category) + "</span>");
-
-                    String source = article.getSource().name().toLowerCase().replace('_', '.');
-                    writer.write("<span class='meta-source'>" + htmlEscape(source) + "</span>");
-                    writer.write("</div>");
-
-                    writer.write("<div class='keywords'>");
-                    for (String keyword : article.getKeywords()) {
-                        writer.write("<span>" + htmlEscape(keyword) + "</span>");
-                    }
-                    writer.write("</div>");
-
-                    if (includeContent) {
-                        writer.write("<div class='content'>" + htmlEscape(article.getContent().trim()) + "</div>");
-                    }
-                    writer.write("</div>");
+                    writer.write(renderArticle(article, includeContent));
                 }
             } while (hasNext);
 
-            writer.write("</body></html>");
+            writer.write(HTML_FOOTER);
             writer.flush();
         } catch (Exception e) {
             log.error("Export to HTML failed: {}", e.getMessage());
             throw new ExportFailedException("HTML");
         }
+    }
+
+    private String renderArticle(NewsArticle article, boolean includeContent) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class='article'>");
+
+        html.append("<div class='media'>");
+        for (String mediaUrl : article.getMediaUrls()) {
+            html.append("<img src=\"")
+                    .append(htmlEscape(mediaUrl))
+                    .append("\" alt=\"media\" loading=\"lazy\"/>");
+        }
+        html.append("</div>");
+
+        html.append("<h2><a href=\"")
+                .append(article.getUrl())
+                .append("\" target=\"_blank\" rel=\"noopener noreferrer\">")
+                .append(htmlEscape(article.getTitle()))
+                .append("</a></h2>");
+
+        html.append("<div class='summary'>")
+                .append(htmlEscape(article.getSummary().trim()))
+                .append("</div>");
+
+        html.append("<div class='meta'>")
+                .append("<span class='meta-date'>")
+                .append(htmlEscape(article.getPublishedAt().format(htmlDateTimeFormatter)))
+                .append("</span>")
+                .append("<span class='meta-category badge'>")
+                .append(getCategory(article))
+                .append("</span>")
+                .append("<span class='meta-source'>")
+                .append(getSource(article))
+                .append("</span>")
+                .append("</div>");
+
+        html.append("<div class='keywords'>");
+        for (String keyword : article.getKeywords()) {
+            html.append("<span>")
+                    .append(htmlEscape(keyword))
+                    .append("</span>");
+        }
+        html.append("</div>");
+
+        if (includeContent) {
+            html.append("<div class='content'>")
+                    .append(htmlEscape(article.getContent().trim()))
+                    .append("</div>");
+        }
+
+        html.append("</div>");
+        return html.toString();
+    }
+
+    private String getCategory(NewsArticle article) {
+        return htmlEscape(article.getCategory().name().toLowerCase().replace('_', '-'));
+    }
+
+    private String getSource(NewsArticle article) {
+        return htmlEscape(article.getSource().name().toLowerCase().replace('_', '.'));
     }
 
 }
