@@ -1,10 +1,10 @@
 package dev.j3rrryy.news_aggregator.service.v1;
 
-import dev.j3rrryy.news_aggregator.dto.request.AutoParsingIntervalDto;
-import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequestDto;
-import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatusDto;
-import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponseDto;
-import dev.j3rrryy.news_aggregator.dto.response.ParsingStatusDto;
+import dev.j3rrryy.news_aggregator.dto.request.AutoParsingInterval;
+import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequest;
+import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatus;
+import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponse;
+import dev.j3rrryy.news_aggregator.dto.response.ParsingStatus;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingNotRunningException;
@@ -41,28 +41,28 @@ public class ParserService {
     }
 
 
-    public ParsingStatusDto getParsingStatus() {
-        return new ParsingStatusDto(parsingStatusManager.isParsingInProgress());
+    public ParsingStatus getParsingStatus() {
+        return new ParsingStatus(parsingStatusManager.isParsingInProgress());
     }
 
-    public NewsSourceStatusesResponseDto getSourceStatuses() {
+    public NewsSourceStatusesResponse getSourceStatuses() {
         return newsSourceStatusesMapper.toResponseDto(parserProperties.getSourceStatuses());
     }
 
-    public void patchSourceStatuses(NewsSourceStatusesRequestDto dto) {
+    public void patchSourceStatuses(NewsSourceStatusesRequest dto) {
         Map<Source, Boolean> currentStatus = parserProperties.getSourceStatuses();
         newsSourceStatusesMapper.updateStatusMap(dto, currentStatus);
         parserProperties.setSourceStatuses(currentStatus);
     }
 
-    public AutoParsingStatusDto getAutoParsingStatus() {
-        return new AutoParsingStatusDto(
+    public AutoParsingStatus getAutoParsingStatus() {
+        return new AutoParsingStatus(
                 parserProperties.isAutoParsingEnabled(),
                 parserProperties.getAutoParsingInterval()
         );
     }
 
-    public void setAutoParsingInterval(AutoParsingIntervalDto dto) {
+    public void setAutoParsingInterval(AutoParsingInterval dto) {
         parserProperties.setAutoParsingInterval(dto.autoParsingInterval());
     }
 

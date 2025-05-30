@@ -27,7 +27,7 @@ public class AnalyticsController {
 
     @GetMapping("/categories")
     @ApiResponse(responseCode = "200", description = "Count of news articles by category")
-    public CategoryCountsDto getCategoryCounts() {
+    public CategoryCounts getCategoryCounts() {
         return analyticsService.getCategoryCounts();
     }
 
@@ -36,7 +36,7 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "200", description = "Top frequent keywords"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public List<KeywordFrequencyDto> getTopFrequentKeywords(
+    public List<KeywordFrequency> getTopFrequentKeywords(
             @RequestParam(defaultValue = "10") @Positive(message = "Limit must be > 0") int limit
     ) {
         return analyticsService.getTopFrequentKeywords(limit);
@@ -44,7 +44,7 @@ public class AnalyticsController {
 
     @GetMapping("/keywords/trend/{keyword}")
     @ApiResponse(responseCode = "200", description = "Frequency trend of the keyword over time")
-    public List<KeywordDateCountDto> getKeywordTrend(@PathVariable String keyword) {
+    public List<KeywordDateCount> getKeywordTrend(@PathVariable String keyword) {
         return analyticsService.getKeywordTrend(keyword);
     }
 
@@ -53,7 +53,7 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "200", description = "Trending topics over the period"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public List<TrendingTopicDto> getTrendingTopics(
+    public List<TrendingTopic> getTrendingTopics(
             @RequestParam
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
             @Past(message = "'fromDate' timestamp must be in the past")

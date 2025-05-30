@@ -1,10 +1,10 @@
 package dev.j3rrryy.news_aggregator.controller.v1;
 
-import dev.j3rrryy.news_aggregator.dto.request.AutoParsingIntervalDto;
-import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequestDto;
-import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatusDto;
-import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponseDto;
-import dev.j3rrryy.news_aggregator.dto.response.ParsingStatusDto;
+import dev.j3rrryy.news_aggregator.dto.request.AutoParsingInterval;
+import dev.j3rrryy.news_aggregator.dto.request.NewsSourceStatusesRequest;
+import dev.j3rrryy.news_aggregator.dto.response.AutoParsingStatus;
+import dev.j3rrryy.news_aggregator.dto.response.NewsSourceStatusesResponse;
+import dev.j3rrryy.news_aggregator.dto.response.ParsingStatus;
 import dev.j3rrryy.news_aggregator.parser.scheduler.ParsingScheduler;
 import dev.j3rrryy.news_aggregator.service.v1.ParserService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -46,13 +46,13 @@ public class ParserController {
 
     @GetMapping("/status")
     @ApiResponse(responseCode = "200", description = "Current status of parsing process")
-    public ParsingStatusDto getParsingStatus() {
+    public ParsingStatus getParsingStatus() {
         return parserService.getParsingStatus();
     }
 
     @GetMapping("/sources/statuses")
     @ApiResponse(responseCode = "200", description = "Current statuses of news sources")
-    public NewsSourceStatusesResponseDto getSourceStatuses() {
+    public NewsSourceStatusesResponse getSourceStatuses() {
         return parserService.getSourceStatuses();
     }
 
@@ -62,13 +62,13 @@ public class ParserController {
             @ApiResponse(responseCode = "204", description = "Source statuses updated successfully"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public void patchSourceStatuses(@RequestBody NewsSourceStatusesRequestDto dto) {
+    public void patchSourceStatuses(@RequestBody NewsSourceStatusesRequest dto) {
         parserService.patchSourceStatuses(dto);
     }
 
     @GetMapping("/auto-parsing/status")
     @ApiResponse(responseCode = "200", description = "Current status of auto-parsing")
-    public AutoParsingStatusDto getAutoParsingStatus() {
+    public AutoParsingStatus getAutoParsingStatus() {
         return parserService.getAutoParsingStatus();
     }
 
@@ -92,7 +92,7 @@ public class ParserController {
             @ApiResponse(responseCode = "204", description = "Interval updated successfully"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public void setAutoParsingInterval(@RequestBody @Valid AutoParsingIntervalDto dto) {
+    public void setAutoParsingInterval(@RequestBody @Valid AutoParsingInterval dto) {
         parserService.setAutoParsingInterval(dto);
     }
 

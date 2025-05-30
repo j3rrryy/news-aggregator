@@ -30,7 +30,7 @@ public class AnalyticsService {
             key = "#root.methodName",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public CategoryCountsDto getCategoryCounts() {
+    public CategoryCounts getCategoryCounts() {
         List<Object[]> counts = newsArticleRepository.countArticlesByCategory();
         Map<Category, Integer> categoryCounts = new HashMap<>();
 
@@ -39,7 +39,7 @@ public class AnalyticsService {
             int count = ((Number) row[1]).intValue();
             categoryCounts.put(category, count);
         }
-        return new CategoryCountsDto(
+        return new CategoryCounts(
                 categoryCounts.getOrDefault(Category.POLITICS, 0),
                 categoryCounts.getOrDefault(Category.ECONOMICS, 0),
                 categoryCounts.getOrDefault(Category.SOCIETY, 0),
@@ -53,10 +53,10 @@ public class AnalyticsService {
             key = "#root.methodName + ':' + #limit",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public List<KeywordFrequencyDto> getTopFrequentKeywords(int limit) {
+    public List<KeywordFrequency> getTopFrequentKeywords(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
         return newsArticleRepository.findMostFrequentKeywords(pageable).stream()
-                .map(row -> new KeywordFrequencyDto((String) row[0], ((Number) row[1]).intValue()))
+                .map(row -> new KeywordFrequency((String) row[0], ((Number) row[1]).intValue()))
                 .toList();
     }
 
@@ -65,12 +65,12 @@ public class AnalyticsService {
             key = "#root.methodName + ':' + #keyword",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public List<KeywordDateCountDto> getKeywordTrend(String keyword) {
+    public List<KeywordDateCount> getKeywordTrend(String keyword) {
         return newsArticleRepository.findKeywordFrequencyOverTime(keyword).stream()
                 .map(row -> {
                     LocalDate day = ((LocalDateTime) row[0]).toLocalDate();
                     int count = ((Number) row[1]).intValue();
-                    return new KeywordDateCountDto(day, count);
+                    return new KeywordDateCount(day, count);
                 })
                 .toList();
     }
@@ -80,11 +80,11 @@ public class AnalyticsService {
             key = "#root.methodName + ':' + #fromDate + '_' + #toDate + '_' + #limit",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public List<TrendingTopicDto> getTrendingTopics(LocalDateTime fromDate, LocalDateTime toDate, int limit) {
+    public List<TrendingTopic> getTrendingTopics(LocalDateTime fromDate, LocalDateTime toDate, int limit) {
         if (fromDate.isAfter(toDate)) throw new FromDateAfterToDateException();
         LocalDateTime prevStart = fromDate.minus(Duration.between(fromDate, toDate));
         return newsArticleRepository.findTopKeywordsInRange(fromDate, toDate, prevStart, limit).stream()
-                .map(row -> new TrendingTopicDto(
+                .map(row -> new TrendingTopic(
                         (String) row[0],
                         ((Number) row[1]).intValue(),
                         ((Number) row[2]).intValue(),

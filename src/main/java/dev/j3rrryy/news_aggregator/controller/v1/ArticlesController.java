@@ -1,8 +1,8 @@
 package dev.j3rrryy.news_aggregator.controller.v1;
 
-import dev.j3rrryy.news_aggregator.dto.request.MarkDeletedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffectedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummaryDto;
+import dev.j3rrryy.news_aggregator.dto.request.MarkDeleted;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffected;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummary;
 import dev.j3rrryy.news_aggregator.service.v1.ArticlesService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -21,7 +21,7 @@ public class ArticlesController {
 
     @GetMapping("/summary")
     @ApiResponse(responseCode = "200", description = "Count of new, active, deleted articles")
-    public ArticlesSummaryDto getArticlesSummary() {
+    public ArticlesSummary getArticlesSummary() {
         return articlesService.getArticlesSummary();
     }
 
@@ -30,19 +30,19 @@ public class ArticlesController {
             @ApiResponse(responseCode = "200", description = "News articles marked as 'deleted' successfully"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public ArticlesAffectedDto markAsDeleted(@RequestBody @Valid MarkDeletedDto dto) {
+    public ArticlesAffected markAsDeleted(@RequestBody @Valid MarkDeleted dto) {
         return articlesService.markAsDeleted(dto);
     }
 
     @DeleteMapping("/marked")
     @ApiResponse(responseCode = "200", description = "News articles marked as 'deleted' deleted successfully")
-    public ArticlesAffectedDto deleteMarkedArticles() {
+    public ArticlesAffected deleteMarkedArticles() {
         return articlesService.deleteMarkedArticles();
     }
 
     @DeleteMapping("/all")
     @ApiResponse(responseCode = "200", description = "All news articles deleted successfully")
-    public ArticlesAffectedDto deleteAllArticles() {
+    public ArticlesAffected deleteAllArticles() {
         return articlesService.deleteAllArticles();
     }
 

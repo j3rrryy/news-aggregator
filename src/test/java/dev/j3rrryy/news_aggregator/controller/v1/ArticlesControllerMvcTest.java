@@ -1,9 +1,9 @@
 package dev.j3rrryy.news_aggregator.controller.v1;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.j3rrryy.news_aggregator.dto.request.MarkDeletedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffectedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummaryDto;
+import dev.j3rrryy.news_aggregator.dto.request.MarkDeleted;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffected;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummary;
 import dev.j3rrryy.news_aggregator.service.v1.ArticlesService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +32,7 @@ public class ArticlesControllerMvcTest {
 
     @Test
     void getArticlesSummary() throws Exception {
-        ArticlesSummaryDto response = new ArticlesSummaryDto(1, 2, 3, 6);
+        ArticlesSummary response = new ArticlesSummary(1, 2, 3, 6);
         given(articlesService.getArticlesSummary()).willReturn(response);
 
         mockMvc.perform(get("/v1/articles/summary")
@@ -47,10 +47,10 @@ public class ArticlesControllerMvcTest {
 
     @Test
     void markAsDeleted() throws Exception {
-        MarkDeletedDto request = new MarkDeletedDto(
+        MarkDeleted request = new MarkDeleted(
                 LocalDateTime.of(2025, 5, 1, 0, 0)
         );
-        ArticlesAffectedDto response = new ArticlesAffectedDto(5);
+        ArticlesAffected response = new ArticlesAffected(5);
         given(articlesService.markAsDeleted(request)).willReturn(response);
 
         mockMvc.perform(put("/v1/articles/mark-deleted")
@@ -64,7 +64,7 @@ public class ArticlesControllerMvcTest {
 
     @Test
     void markAsDeleted_invalidBody_futureOlderThan() throws Exception {
-        MarkDeletedDto request = new MarkDeletedDto(LocalDateTime.now().plusDays(1));
+        MarkDeleted request = new MarkDeleted(LocalDateTime.now().plusDays(1));
         mockMvc.perform(put("/v1/articles/mark-deleted")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
@@ -89,7 +89,7 @@ public class ArticlesControllerMvcTest {
 
     @Test
     void deleteMarkedArticles() throws Exception {
-        ArticlesAffectedDto response = new ArticlesAffectedDto(7);
+        ArticlesAffected response = new ArticlesAffected(7);
         given(articlesService.deleteMarkedArticles()).willReturn(response);
 
         mockMvc.perform(delete("/v1/articles/marked")
@@ -101,7 +101,7 @@ public class ArticlesControllerMvcTest {
 
     @Test
     void deleteAllArticles() throws Exception {
-        ArticlesAffectedDto response = new ArticlesAffectedDto(23);
+        ArticlesAffected response = new ArticlesAffected(23);
         given(articlesService.deleteAllArticles()).willReturn(response);
 
         mockMvc.perform(delete("/v1/articles/all")

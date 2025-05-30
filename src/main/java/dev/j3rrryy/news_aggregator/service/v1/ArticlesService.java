@@ -1,8 +1,8 @@
 package dev.j3rrryy.news_aggregator.service.v1;
 
-import dev.j3rrryy.news_aggregator.dto.request.MarkDeletedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffectedDto;
-import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummaryDto;
+import dev.j3rrryy.news_aggregator.dto.request.MarkDeleted;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesAffected;
+import dev.j3rrryy.news_aggregator.dto.response.ArticlesSummary;
 import dev.j3rrryy.news_aggregator.enums.Status;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,32 +23,32 @@ public class ArticlesService {
             key = "#root.methodName",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public ArticlesSummaryDto getArticlesSummary() {
+    public ArticlesSummary getArticlesSummary() {
         int newCount = newsArticleRepository.countByStatus(Status.NEW);
         int activeCount = newsArticleRepository.countByStatus(Status.ACTIVE);
         int deletedCount = newsArticleRepository.countByStatus(Status.DELETED);
         int total = newCount + activeCount + deletedCount;
-        return new ArticlesSummaryDto(newCount, activeCount, deletedCount, total);
+        return new ArticlesSummary(newCount, activeCount, deletedCount, total);
     }
 
     @Transactional
-    public ArticlesAffectedDto markAsDeleted(MarkDeletedDto dto) {
+    public ArticlesAffected markAsDeleted(MarkDeleted dto) {
         cacheManagerService.clearAllCaches();
-        return new ArticlesAffectedDto(
+        return new ArticlesAffected(
                 newsArticleRepository.markAsDeletedByPublishedAtBefore(dto.olderThan())
         );
     }
 
     @Transactional
-    public ArticlesAffectedDto deleteMarkedArticles() {
+    public ArticlesAffected deleteMarkedArticles() {
         cacheManagerService.clearAllCaches();
-        return new ArticlesAffectedDto(newsArticleRepository.deleteAllMarkedAsDeleted());
+        return new ArticlesAffected(newsArticleRepository.deleteAllMarkedAsDeleted());
     }
 
     @Transactional
-    public ArticlesAffectedDto deleteAllArticles() {
+    public ArticlesAffected deleteAllArticles() {
         cacheManagerService.clearAllCaches();
-        return new ArticlesAffectedDto(newsArticleRepository.deleteAllArticles());
+        return new ArticlesAffected(newsArticleRepository.deleteAllArticles());
     }
 
 }

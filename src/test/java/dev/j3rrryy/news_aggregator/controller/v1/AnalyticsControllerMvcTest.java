@@ -28,7 +28,7 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getCategoryCounts() throws Exception {
-        CategoryCountsDto response = new CategoryCountsDto(0, 1, 2, 3, 4);
+        CategoryCounts response = new CategoryCounts(0, 1, 2, 3, 4);
         given(analyticsService.getCategoryCounts()).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/categories")
@@ -44,9 +44,9 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getTopFrequentKeywords() throws Exception {
-        List<KeywordFrequencyDto> response = List.of(
-                new KeywordFrequencyDto("java", 6),
-                new KeywordFrequencyDto("spring", 12)
+        List<KeywordFrequency> response = List.of(
+                new KeywordFrequency("java", 6),
+                new KeywordFrequency("spring", 12)
         );
         given(analyticsService.getTopFrequentKeywords(10)).willReturn(response);
 
@@ -85,9 +85,9 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getKeywordTrend() throws Exception {
-        List<KeywordDateCountDto> response = List.of(
-                new KeywordDateCountDto(LocalDate.of(2025, 5, 1), 5),
-                new KeywordDateCountDto(LocalDate.of(2025, 2, 1), 7)
+        List<KeywordDateCount> response = List.of(
+                new KeywordDateCount(LocalDate.of(2025, 5, 1), 5),
+                new KeywordDateCount(LocalDate.of(2025, 2, 1), 7)
         );
         given(analyticsService.getKeywordTrend("java")).willReturn(response);
 
@@ -103,9 +103,9 @@ public class AnalyticsControllerMvcTest {
 
     @Test
     void getTrendingTopics() throws Exception {
-        List<TrendingTopicDto> response = List.of(
-                new TrendingTopicDto("java", 10, 3, 7),
-                new TrendingTopicDto("spring", 8, 5, 3)
+        List<TrendingTopic> response = List.of(
+                new TrendingTopic("java", 10, 3, 7),
+                new TrendingTopic("spring", 8, 5, 3)
         );
         LocalDateTime from = LocalDateTime.of(2025, 5, 1, 0, 0);
         LocalDateTime to = LocalDateTime.of(2025, 5, 7, 0, 0);

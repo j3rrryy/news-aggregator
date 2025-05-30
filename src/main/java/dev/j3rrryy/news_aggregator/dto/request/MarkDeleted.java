@@ -6,7 +6,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
 
-public record MarkDeletedDto(
+public record MarkDeleted(
         @NotNull(message = "Timestamp must be provided")
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         @PastOrPresent(message = "Timestamp must be in the past or present")

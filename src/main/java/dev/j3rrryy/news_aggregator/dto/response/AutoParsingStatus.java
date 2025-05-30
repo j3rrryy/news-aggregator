@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Duration;
 
-public record AutoParsingStatusDto(
+public record AutoParsingStatus(
         boolean autoParsingEnabled,
-        
+
         @Schema(example = "2d5h10m")
         Duration autoParsingInterval
 ) {

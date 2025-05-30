@@ -1,8 +1,8 @@
 package dev.j3rrryy.news_aggregator.controller.v1;
 
-import dev.j3rrryy.news_aggregator.dto.response.CursorPageDto;
-import dev.j3rrryy.news_aggregator.dto.response.NewsArticleFullDto;
-import dev.j3rrryy.news_aggregator.dto.response.NewsArticleSummaryDto;
+import dev.j3rrryy.news_aggregator.dto.response.CursorPage;
+import dev.j3rrryy.news_aggregator.dto.response.NewsArticleFull;
+import dev.j3rrryy.news_aggregator.dto.response.NewsArticleSummary;
 import dev.j3rrryy.news_aggregator.enums.*;
 import dev.j3rrryy.news_aggregator.service.v1.SearchService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,7 +32,7 @@ public class SearchController {
             @ApiResponse(responseCode = "200", description = "Search results"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public CursorPageDto<NewsArticleSummaryDto> searchNews(
+    public CursorPage<NewsArticleSummary> searchNews(
             @RequestParam(required = false)
             String query,
 
@@ -93,7 +93,7 @@ public class SearchController {
             @ApiResponse(responseCode = "400", ref = "ValidationFailed"),
             @ApiResponse(responseCode = "404", description = "Article not found")
     })
-    public NewsArticleFullDto getNewsArticle(@PathVariable UUID id) {
+    public NewsArticleFull getNewsArticle(@PathVariable UUID id) {
         return searchService.getById(id);
     }
 
