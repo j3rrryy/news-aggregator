@@ -67,10 +67,15 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Map<String, String> onMessageNotReadable(HttpMessageNotReadableException e) {
-        String msg = e.getMostSpecificCause().getMessage();
-        Matcher matcher = unrecognizedFieldPattern.matcher(msg);
+        Throwable cause = e.getMostSpecificCause();
 
+        if (cause instanceof InvalidDurationFormatException || cause instanceof DurationIsZeroException) {
+            return Map.of("autoParsingInterval", cause.getMessage());
+        }
+
+        Matcher matcher = unrecognizedFieldPattern.matcher(cause.getMessage());
         String field = "request";
+
         if (matcher.find()) {
             field = matcher.group(1);
         }
