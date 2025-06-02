@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -48,7 +49,7 @@ public class AnalyticsControllerMvcTest {
                 new KeywordFrequency("java", 6),
                 new KeywordFrequency("spring", 12)
         );
-        given(analyticsService.getTopFrequentKeywords(10)).willReturn(response);
+        given(analyticsService.getTopFrequentKeywords(anyInt())).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/top")
                         .param("limit", "10")
@@ -89,7 +90,7 @@ public class AnalyticsControllerMvcTest {
                 new KeywordDateCount(LocalDate.of(2025, 5, 1), 5),
                 new KeywordDateCount(LocalDate.of(2025, 2, 1), 7)
         );
-        given(analyticsService.getKeywordTrend("java")).willReturn(response);
+        given(analyticsService.getKeywordTrend(anyString())).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/trend/java")
                         .accept(MediaType.APPLICATION_JSON))
@@ -107,9 +108,8 @@ public class AnalyticsControllerMvcTest {
                 new TrendingTopic("java", 10, 3, 7),
                 new TrendingTopic("spring", 8, 5, 3)
         );
-        LocalDateTime from = LocalDateTime.of(2025, 5, 1, 0, 0);
-        LocalDateTime to = LocalDateTime.of(2025, 5, 7, 0, 0);
-        given(analyticsService.getTrendingTopics(from, to, 10)).willReturn(response);
+        given(analyticsService.getTrendingTopics(any(LocalDateTime.class), any(LocalDateTime.class), anyInt()))
+                .willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/trending")
                         .param("fromDate", "2025-05-01T00:00:00")

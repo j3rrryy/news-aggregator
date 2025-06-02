@@ -12,6 +12,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Set;
 
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/export")

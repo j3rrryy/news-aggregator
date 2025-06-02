@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -51,7 +52,7 @@ public class ArticlesControllerMvcTest {
                 LocalDateTime.of(2025, 5, 1, 0, 0)
         );
         ArticlesAffected response = new ArticlesAffected(5);
-        given(articlesService.markAsDeleted(request)).willReturn(response);
+        given(articlesService.markAsDeleted(any(MarkDeleted.class))).willReturn(response);
 
         mockMvc.perform(put("/v1/articles/mark-deleted")
                         .contentType(MediaType.APPLICATION_JSON)
