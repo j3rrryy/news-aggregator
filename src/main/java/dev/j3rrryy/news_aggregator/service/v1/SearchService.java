@@ -37,18 +37,18 @@ public class SearchService {
 
     @Cacheable(
             value = "newsSearch",
-            key = "#root.methodName + ':' + #query + '_' + #dateFrom + '_' + #dateTo + '_' + " +
+            key = "#root.methodName + ':' + #query + '_' + #fromDate + '_' + #toDate + '_' + " +
                     "T(java.util.Objects).hash(#categories != null ? new java.util.TreeSet(#categories) : null) + '_' + " +
                     "T(java.util.Objects).hash(#sources != null ? new java.util.TreeSet(#sources) : null) + '_' + " +
                     "T(java.util.Objects).hash(#statuses != null ? new java.util.TreeSet(#statuses) : null) + '_' + " +
                     "T(java.util.Objects).hash(#keywords != null ? new java.util.TreeSet(#keywords) : null) + '_' + " +
-                    "#sortField + '_' + #sortDirection + '_' + #cursor + '_' + #size",
+                    "#sortField + '_' + #sortDirection + '_' + #cursor + '_' + #limit",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public CursorPage<NewsArticleSummary> searchNews(
             String query,
-            LocalDateTime dateFrom,
-            LocalDateTime dateTo,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
             Set<Category> categories,
             Set<Source> sources,
             Set<Status> statuses,
@@ -56,20 +56,20 @@ public class SearchService {
             SortField sortField,
             SortDirection sortDirection,
             String cursor,
-            int size
+            int limit
     ) {
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
             throw new FromDateAfterToDateException();
         }
 
         CursorData cursorData = parseCursor(cursor);
         Specification<NewsArticle> spec = NewsArticleSpecs.filterAll(
-                query, dateFrom, dateTo, categories, sources, statuses,
+                query, fromDate, toDate, categories, sources, statuses,
                 keywords, cursorData.publishedAt(), cursorData.id()
         );
 
         Sort sort = resolveSort(sortField, sortDirection);
-        Pageable pageable = PageRequest.of(0, size, sort);
+        Pageable pageable = PageRequest.of(0, limit, sort);
         Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
 
         List<NewsArticleSummary> articleSummaries = slice.getContent().stream()
@@ -89,7 +89,7 @@ public class SearchService {
             key = "#root.methodName + ':' + #id",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public NewsArticleFull getById(UUID id) {
+    public NewsArticleFull getNewsArticle(UUID id) {
         return newsArticleRepository.findById(id)
                 .map(searchMapper::toFull)
                 .orElseThrow(() -> new ArticleNotFoundException(id));

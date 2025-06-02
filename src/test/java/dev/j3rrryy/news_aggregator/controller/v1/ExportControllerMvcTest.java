@@ -141,27 +141,27 @@ public class ExportControllerMvcTest {
     }
 
     @Test
-    void export_invalidFromDate_Future() throws Exception {
+    void export_invalidFromDate_future() throws Exception {
         mockMvc.perform(get("/v1/export")
-                        .param("dateFrom", LocalDateTime.now().plusDays(1).toString())
+                        .param("fromDate", LocalDateTime.now().plusDays(1).toString())
                         .param("fileFormat", "CSV")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.dateFrom")
-                        .value("'dateFrom' timestamp must be in the past"));
+                .andExpect(jsonPath("$.fromDate")
+                        .value("'fromDate' timestamp must be in the past"));
     }
 
     @Test
-    void export_invalidToDate_Future() throws Exception {
+    void export_invalidToDate_future() throws Exception {
         mockMvc.perform(get("/v1/export")
-                        .param("dateTo", LocalDateTime.now().plusDays(1).toString())
+                        .param("toDate", LocalDateTime.now().plusDays(1).toString())
                         .param("fileFormat", "CSV")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.dateTo")
-                        .value("'dateTo' timestamp must be in the past or present"));
+                .andExpect(jsonPath("$.toDate")
+                        .value("'toDate' timestamp must be in the past or present"));
     }
 
 }

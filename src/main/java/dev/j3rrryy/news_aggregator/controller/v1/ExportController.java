@@ -46,13 +46,13 @@ public class ExportController {
 
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @Past(message = "'dateFrom' timestamp must be in the past")
-            LocalDateTime dateFrom,
+            @Past(message = "'fromDate' timestamp must be in the past")
+            LocalDateTime fromDate,
 
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @PastOrPresent(message = "'dateTo' timestamp must be in the past or present")
-            LocalDateTime dateTo,
+            @PastOrPresent(message = "'toDate' timestamp must be in the past or present")
+            LocalDateTime toDate,
 
             @RequestParam(required = false)
             Set<Category> category,
@@ -79,8 +79,8 @@ public class ExportController {
     ) {
         StreamingResponseBody body = outputStream -> exportService.export(
                 query,
-                dateFrom,
-                dateTo,
+                fromDate,
+                toDate,
                 category,
                 source,
                 status,

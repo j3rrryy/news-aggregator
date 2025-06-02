@@ -5,9 +5,7 @@ import dev.j3rrryy.news_aggregator.service.v1.AnalyticsService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.Past;
-import jakarta.validation.constraints.PastOrPresent;
-import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.annotation.Validated;
@@ -66,6 +64,7 @@ public class AnalyticsController {
 
             @RequestParam(defaultValue = "10")
             @Positive(message = "Limit must be > 0")
+            @Max(value = 250, message = "Limit must be ≤ 250")
             int limit
     ) {
         return analyticsService.getTrendingTopics(fromDate, toDate, limit);

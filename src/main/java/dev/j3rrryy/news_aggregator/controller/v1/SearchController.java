@@ -38,13 +38,13 @@ public class SearchController {
 
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @Past(message = "'dateFrom' timestamp must be in the past")
-            LocalDateTime dateFrom,
+            @Past(message = "'fromDate' timestamp must be in the past")
+            LocalDateTime fromDate,
 
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            @PastOrPresent(message = "'dateTo' timestamp must be in the past or present")
-            LocalDateTime dateTo,
+            @PastOrPresent(message = "'toDate' timestamp must be in the past or present")
+            LocalDateTime toDate,
 
             @RequestParam(required = false)
             Set<Category> category,
@@ -68,14 +68,14 @@ public class SearchController {
             String cursor,
 
             @RequestParam(defaultValue = "10")
-            @Positive(message = "Size must be > 0")
-            @Max(value = 100, message = "Size must be <= 100")
-            int size
+            @Positive(message = "Limit must be > 0")
+            @Max(value = 100, message = "Limit must be ≤ 100")
+            int limit
     ) {
         return searchService.searchNews(
                 query,
-                dateFrom,
-                dateTo,
+                fromDate,
+                toDate,
                 category,
                 source,
                 status,
@@ -83,7 +83,7 @@ public class SearchController {
                 sortField,
                 sortDirection,
                 cursor,
-                size
+                limit
         );
     }
 
@@ -94,7 +94,7 @@ public class SearchController {
             @ApiResponse(responseCode = "404", description = "Article not found")
     })
     public NewsArticleFull getNewsArticle(@PathVariable UUID id) {
-        return searchService.getById(id);
+        return searchService.getNewsArticle(id);
     }
 
 }

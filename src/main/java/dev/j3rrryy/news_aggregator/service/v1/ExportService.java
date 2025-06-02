@@ -180,8 +180,8 @@ public class ExportService {
 
     public void export(
             String query,
-            LocalDateTime dateFrom,
-            LocalDateTime dateTo,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
             Set<Category> categories,
             Set<Source> sources,
             Set<Status> statuses,
@@ -192,12 +192,12 @@ public class ExportService {
             boolean includeContent,
             FileFormat fileFormat
     ) {
-        if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
+        if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
             throw new FromDateAfterToDateException();
         }
 
         Specification<NewsArticle> spec = NewsArticleSpecs.filterAll(
-                query, dateFrom, dateTo, categories, sources, statuses,
+                query, fromDate, toDate, categories, sources, statuses,
                 keywords, null, null
         );
         Sort sort = resolveSort(sortField, sortDirection);

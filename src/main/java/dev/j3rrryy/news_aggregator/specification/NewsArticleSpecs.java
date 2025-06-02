@@ -17,8 +17,8 @@ public class NewsArticleSpecs {
 
     public static Specification<NewsArticle> filterAll(
             String query,
-            LocalDateTime dateFrom,
-            LocalDateTime dateTo,
+            LocalDateTime fromDate,
+            LocalDateTime toDate,
             Set<Category> categories,
             Set<Source> sources,
             Set<Status> statuses,
@@ -27,7 +27,7 @@ public class NewsArticleSpecs {
             UUID cursorId
     ) {
         return Specification.where(fullText(query))
-                .and(dateBetween(dateFrom, dateTo))
+                .and(dateBetween(fromDate, toDate))
                 .and(byCategories(categories))
                 .and(bySources(sources))
                 .and(byStatuses(statuses))

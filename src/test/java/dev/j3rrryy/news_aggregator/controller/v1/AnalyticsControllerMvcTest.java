@@ -52,7 +52,6 @@ public class AnalyticsControllerMvcTest {
         given(analyticsService.getTopFrequentKeywords(anyInt())).willReturn(response);
 
         mockMvc.perform(get("/v1/analytics/keywords/top")
-                        .param("limit", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -114,7 +113,6 @@ public class AnalyticsControllerMvcTest {
         mockMvc.perform(get("/v1/analytics/keywords/trending")
                         .param("fromDate", "2025-05-01T00:00:00")
                         .param("toDate", "2025-05-07T00:00:00")
-                        .param("limit", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -133,7 +131,6 @@ public class AnalyticsControllerMvcTest {
         mockMvc.perform(get("/v1/analytics/keywords/trending")
                         .param("fromDate", LocalDateTime.now().plusDays(1).toString())
                         .param("toDate", "2025-05-07T00:00:00")
-                        .param("limit", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -146,7 +143,6 @@ public class AnalyticsControllerMvcTest {
         mockMvc.perform(get("/v1/analytics/keywords/trending")
                         .param("fromDate", "2025-05-01T00:00:00")
                         .param("toDate", LocalDateTime.now().plusDays(1).toString())
-                        .param("limit", "10")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -178,6 +174,19 @@ public class AnalyticsControllerMvcTest {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.limit")
                         .value("Limit must be > 0"));
+    }
+
+    @Test
+    void getTrendingTopics_invalidLimit_max() throws Exception {
+        mockMvc.perform(get("/v1/analytics/keywords/trending")
+                        .param("fromDate", "2025-05-01T00:00:00")
+                        .param("toDate", "2025-05-07T00:00:00")
+                        .param("limit", "251")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.limit")
+                        .value("Limit must be ≤ 250"));
     }
 
 }
