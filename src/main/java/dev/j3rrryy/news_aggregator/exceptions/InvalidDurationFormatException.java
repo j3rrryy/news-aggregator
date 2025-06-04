@@ -7,7 +7,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class InvalidDurationFormatException extends RuntimeException {
 
     public InvalidDurationFormatException(String duration) {
-        super("Invalid duration format: " + duration + ". Expected format is XdYhZm");
+        super("Invalid duration format: " + duration + ". Expected a combination of numbers with units: " +
+                "'d' (days), 'h' (hours), 'm' (minutes). Examples: 2d5h, 30m7h, 3d.");
     }
 
 }

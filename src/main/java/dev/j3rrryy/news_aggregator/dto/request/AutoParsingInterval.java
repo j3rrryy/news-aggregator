@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.Duration;
 
 public record AutoParsingInterval(
-        @Schema(example = "2d5h10m")
+        @Schema(examples = {"2d5h10m", "9m3h", "5d"})
         @NotNull(message = "Interval must be provided")
         Duration autoParsingInterval
 ) {

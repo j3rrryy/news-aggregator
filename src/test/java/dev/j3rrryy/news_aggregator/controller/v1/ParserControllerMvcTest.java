@@ -144,12 +144,13 @@ public class ParserControllerMvcTest {
     void setAutoParsingInterval_invalidBody_invaildAutoParsingIntervalFormat() throws Exception {
         mockMvc.perform(patch("/v1/parser/auto-parsing/interval")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"autoParsingInterval\": \"4d7m\"}")
+                        .content("{\"autoParsingInterval\": \"5dm\"}")
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.autoParsingInterval")
-                        .value("Invalid duration format: 4d7m. Expected format is XdYhZm"));
+                        .value("Invalid duration format: 5dm. Expected a combination of numbers with " +
+                                "units: 'd' (days), 'h' (hours), 'm' (minutes). Examples: 2d5h, 30m7h, 3d."));
     }
 
     @Test
@@ -161,7 +162,7 @@ public class ParserControllerMvcTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.autoParsingInterval")
-                        .value("Duration must not be zero"));
+                        .value("Interval must not be zero"));
     }
 
     @Test

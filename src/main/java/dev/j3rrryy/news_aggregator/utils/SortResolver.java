@@ -6,6 +6,10 @@ import org.springframework.data.domain.Sort;
 
 public class SortResolver {
 
+    private SortResolver() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     public static Sort resolveSort(SortField sortField, SortDirection sortDirection) {
         SortField safeField = (sortField == null) ? SortField.PUBLISHED_AT : sortField;
         SortDirection safeDirection = (sortDirection == null) ? SortDirection.DESC : sortDirection;

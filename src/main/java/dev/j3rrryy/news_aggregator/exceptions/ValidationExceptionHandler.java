@@ -69,7 +69,7 @@ public class ValidationExceptionHandler {
     public Map<String, String> onMessageNotReadable(HttpMessageNotReadableException e) {
         Throwable cause = e.getMostSpecificCause();
 
-        if (cause instanceof InvalidDurationFormatException || cause instanceof DurationIsZeroException) {
+        if (cause instanceof InvalidDurationFormatException || cause instanceof IntervalIsZeroException) {
             return Map.of("autoParsingInterval", cause.getMessage());
         }
 

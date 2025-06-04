@@ -6,9 +6,21 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Sort;
 
+import java.lang.reflect.Constructor;
+
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class SortResolverTest {
+
+    @Test
+    void constructor_shouldThrowException() {
+        assertThatThrownBy(() -> {
+            Constructor<SortResolver> constructor = SortResolver.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            constructor.newInstance();
+        }).hasCauseInstanceOf(UnsupportedOperationException.class);
+    }
 
     @Test
     void resolveSort_defaultsToPublishedAtDesc() {

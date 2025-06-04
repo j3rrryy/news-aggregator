@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import dev.j3rrryy.news_aggregator.exceptions.DurationIsZeroException;
+import dev.j3rrryy.news_aggregator.exceptions.IntervalIsZeroException;
 import dev.j3rrryy.news_aggregator.exceptions.InvalidDurationFormatException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,7 +30,7 @@ public class DurationDeserializerTest {
 
     @Test
     void deserializeDaysHoursMinutes() throws Exception {
-        String json = "{\"duration\":\"1d5h10m\"}";
+        String json = "{\"duration\":\"5h1d10m\"}";
         Wrapper result = objectMapper.readValue(json, Wrapper.class);
 
         Duration expected = Duration.ofDays(1).plusHours(5).plusMinutes(10);
@@ -39,7 +39,7 @@ public class DurationDeserializerTest {
 
     @Test
     void deserializeOnlyDays() throws Exception {
-        String json = "{\"duration\":\"2d0h0m\"}";
+        String json = "{\"duration\":\"2d\"}";
         Wrapper result = objectMapper.readValue(json, Wrapper.class);
 
         Duration expected = Duration.ofDays(2);
@@ -48,7 +48,7 @@ public class DurationDeserializerTest {
 
     @Test
     void deserializeOnlyHoursMinutes() throws Exception {
-        String json = "{\"duration\":\"0d3h30m\"}";
+        String json = "{\"duration\":\"30m3h\"}";
         Wrapper result = objectMapper.readValue(json, Wrapper.class);
 
         Duration expected = Duration.ofHours(3).plusMinutes(30);
@@ -57,19 +57,28 @@ public class DurationDeserializerTest {
 
     @Test
     void deserializeZeroThrows() {
-        String json = "{\"duration\":\"0d0h0m\"}";
+        String json = "{\"duration\":\"0m\"}";
         assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
                 .isInstanceOf(JsonMappingException.class)
-                .hasRootCauseInstanceOf(DurationIsZeroException.class);
+                .hasRootCauseInstanceOf(IntervalIsZeroException.class);
     }
 
     @Test
-    void deserializeInvalidFormatThrows() {
-        String json = "{\"duration\":\"3d5m\"}";
+    void deserializeDuplicateDaysThrows() {
+        String json = "{\"duration\":\"5d7d\"}";
         assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
                 .isInstanceOf(JsonMappingException.class)
                 .hasRootCauseInstanceOf(InvalidDurationFormatException.class)
-                .hasMessageContaining("3d5m");
+                .hasMessageContaining("duplicate days");
+    }
+
+    @Test
+    void deserializeDuplicateHoursThrows() {
+        String json = "{\"duration\":\"2h2h\"}";
+        assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
+                .isInstanceOf(JsonMappingException.class)
+                .hasRootCauseInstanceOf(InvalidDurationFormatException.class)
+                .hasMessageContaining("duplicate hours");
     }
 
     @Test
