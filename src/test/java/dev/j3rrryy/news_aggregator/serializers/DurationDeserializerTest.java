@@ -9,6 +9,8 @@ import dev.j3rrryy.news_aggregator.exceptions.InvalidDurationFormatException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.time.Duration;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -60,7 +62,8 @@ public class DurationDeserializerTest {
         String json = "{\"duration\":\"0m\"}";
         assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
                 .isInstanceOf(JsonMappingException.class)
-                .hasRootCauseInstanceOf(IntervalIsZeroException.class);
+                .hasRootCauseInstanceOf(IntervalIsZeroException.class)
+                .hasMessageContaining("Interval must not be zero");
     }
 
     @Test
@@ -69,7 +72,7 @@ public class DurationDeserializerTest {
         assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
                 .isInstanceOf(JsonMappingException.class)
                 .hasRootCauseInstanceOf(InvalidDurationFormatException.class)
-                .hasMessageContaining("duplicate days");
+                .hasMessageContaining("duplicate days in 5d7d");
     }
 
     @Test
@@ -78,7 +81,16 @@ public class DurationDeserializerTest {
         assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
                 .isInstanceOf(JsonMappingException.class)
                 .hasRootCauseInstanceOf(InvalidDurationFormatException.class)
-                .hasMessageContaining("duplicate hours");
+                .hasMessageContaining("duplicate hours in 2h2h");
+    }
+
+    @Test
+    void deserializeDuplicateMinutesThrows() {
+        String json = "{\"duration\":\"10m5m\"}";
+        assertThatThrownBy(() -> objectMapper.readValue(json, Wrapper.class))
+                .isInstanceOf(JsonMappingException.class)
+                .hasRootCauseInstanceOf(InvalidDurationFormatException.class)
+                .hasMessageContaining("duplicate minutes in 10m5m");
     }
 
     @Test
@@ -90,7 +102,32 @@ public class DurationDeserializerTest {
                 .hasMessageContaining("xyz");
     }
 
-    record Wrapper(Duration duration) {
+    @Test
+    void processUnitInvalidDurationThrows() throws Exception {
+        DurationDeserializer deserializer = new DurationDeserializer();
+
+        Class<?> partsClass = Class.forName(
+                "dev.j3rrryy.news_aggregator.serializers.DurationDeserializer$DurationParts"
+        );
+        var constructor = partsClass.getDeclaredConstructor(Long.class, Long.class, Long.class);
+        constructor.setAccessible(true);
+        Object partsInstance = constructor.newInstance(null, null, null);
+
+        Method processUnit = DurationDeserializer.class.getDeclaredMethod(
+                "processUnit", long.class, String.class, partsClass, String.class);
+        processUnit.setAccessible(true);
+
+        assertThatThrownBy(() -> {
+            try {
+                processUnit.invoke(deserializer, 5L, "x", partsInstance, "5x");
+            } catch (InvocationTargetException e) {
+                throw e.getCause();
+            }
+        }).isInstanceOf(InvalidDurationFormatException.class)
+                .hasMessageContaining("Unexpected unit: x in 5x");
+    }
+
+    private record Wrapper(Duration duration) {
 
     }
 

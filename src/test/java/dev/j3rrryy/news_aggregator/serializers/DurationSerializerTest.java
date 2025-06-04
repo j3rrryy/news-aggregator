@@ -78,7 +78,7 @@ public class DurationSerializerTest {
         assertThat(json).isEqualTo("{\"duration\":\"2d\"}");
     }
 
-    record Wrapper(Duration duration) {
+    private record Wrapper(Duration duration) {
 
     }
 

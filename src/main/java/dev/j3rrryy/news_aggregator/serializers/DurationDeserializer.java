@@ -21,48 +21,60 @@ public class DurationDeserializer extends JsonDeserializer<Duration> {
     public Duration deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
         String value = jsonParser.getText().trim();
         Matcher matcher = durationPattern.matcher(value);
-
-        Long days = null;
-        Long hours = null;
-        Long minutes = null;
+        DurationParts parts = new DurationParts(null, null, null);
 
         boolean found = false;
         int totalMatchedLength = 0;
         while (matcher.find()) {
             totalMatchedLength += matcher.end() - matcher.start();
             found = true;
-
-            long number = Long.parseLong(matcher.group(1));
-            String unit = matcher.group(2);
-            switch (unit) {
-                case "d" -> {
-                    if (days != null) throw new InvalidDurationFormatException("duplicate days in " + value);
-                    days = number;
-                }
-                case "h" -> {
-                    if (hours != null) throw new InvalidDurationFormatException("duplicate hours in " + value);
-                    hours = number;
-                }
-                case "m" -> {
-                    if (minutes != null) throw new InvalidDurationFormatException("duplicate minutes in " + value);
-                    minutes = number;
-                }
-                default -> throw new InvalidDurationFormatException(value);
-            }
+            processUnit(Long.parseLong(matcher.group(1)), matcher.group(2), parts, value);
         }
 
         if (!found || totalMatchedLength != value.length()) {
             throw new InvalidDurationFormatException(value);
         }
 
-        Duration duration = Duration.ofDays(days == null ? 0 : days)
-                .plusHours(hours == null ? 0 : hours)
-                .plusMinutes(minutes == null ? 0 : minutes);
+        Duration duration = Duration.ofDays(parts.days == null ? 0 : parts.days)
+                .plusHours(parts.hours == null ? 0 : parts.hours)
+                .plusMinutes(parts.minutes == null ? 0 : parts.minutes);
 
         if (duration.isZero()) {
             throw new IntervalIsZeroException();
         }
         return duration;
+    }
+
+    private void processUnit(long number, String unit, DurationParts parts, String rawValue) {
+        switch (unit) {
+            case "d" -> {
+                if (parts.days != null) throw new InvalidDurationFormatException("duplicate days in " + rawValue);
+                parts.days = number;
+            }
+            case "h" -> {
+                if (parts.hours != null) throw new InvalidDurationFormatException("duplicate hours in " + rawValue);
+                parts.hours = number;
+            }
+            case "m" -> {
+                if (parts.minutes != null) throw new InvalidDurationFormatException("duplicate minutes in " + rawValue);
+                parts.minutes = number;
+            }
+            default -> throw new InvalidDurationFormatException("Unexpected unit: " + unit + " in " + rawValue);
+        }
+    }
+
+    private static class DurationParts {
+
+        Long days;
+        Long hours;
+        Long minutes;
+
+        DurationParts(Long days, Long hours, Long minutes) {
+            this.days = days;
+            this.hours = hours;
+            this.minutes = minutes;
+        }
+
     }
 
 }
