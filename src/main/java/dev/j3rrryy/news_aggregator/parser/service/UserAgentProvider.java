@@ -1,5 +1,6 @@
 package dev.j3rrryy.news_aggregator.parser.service;
 
+import com.google.common.annotations.VisibleForTesting;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -8,7 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class UserAgentProvider {
 
-    private static final List<String> userAgents = List.of(
+    @VisibleForTesting
+    static final List<String> userAgents = List.of(
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0",
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.2420.81",

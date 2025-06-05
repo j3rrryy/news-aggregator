@@ -2,6 +2,7 @@ package dev.j3rrryy.news_aggregator.parser.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,8 +21,8 @@ import java.util.concurrent.Semaphore;
 @RequiredArgsConstructor
 public class PageFetcher {
 
-    private static final Semaphore ioSemaphore = new Semaphore(50);
-    private static final Map<String, String> headers = Map.of(
+    @VisibleForTesting
+    static final Map<String, String> headers = Map.of(
             "Accept-Language", "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
             "Accept-Encoding", "gzip, deflate, br",
             "Referer", "https://www.google.com",
@@ -31,7 +32,7 @@ public class PageFetcher {
             "Upgrade-Insecure-Requests", "1",
             "Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8"
     );
-
+    private static final Semaphore ioSemaphore = new Semaphore(50);
     private final UserAgentProvider userAgentProvider;
     private final ParsingStatusManager parsingStatusManager;
 
@@ -41,7 +42,7 @@ public class PageFetcher {
             ioSemaphore.acquire();
             rateLimiter.acquire();
 
-            if (stopRequested || Thread.interrupted()) return Optional.empty();
+            if (stopRequested || isThreadInterrupted()) return Optional.empty();
 
             Document doc = pageLoader.call();
             return Optional.of(doc);
@@ -83,6 +84,11 @@ public class PageFetcher {
                     .toString();
             return Jsoup.parse(html);
         };
+    }
+
+    @VisibleForTesting
+    boolean isThreadInterrupted() {
+        return Thread.interrupted();
     }
 
 }
