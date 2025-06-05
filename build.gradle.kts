@@ -65,6 +65,7 @@ tasks.jacocoTestReport {
         files(classDirectories.files.map {
             fileTree(it) {
                 exclude("**/NewsAggregatorApplication.class")
+                exclude("**/*Dialect*.class")
             }
         })
     )
