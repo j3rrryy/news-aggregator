@@ -176,7 +176,7 @@ public class ExportService {
     private static final String HTML_FOOTER = "</body></html>";
 
     private final SearchMapper searchMapper;
-    private final NewsArticleRepository newsArticleRepository;
+    private final NewsArticleRepository repository;
 
     public void export(
             String query,
@@ -239,7 +239,7 @@ public class ExportService {
 
             do {
                 Pageable pageable = PageRequest.of(page++, 1000, sort);
-                Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
+                Slice<NewsArticle> slice = repository.findAll(spec, pageable);
                 hasNext = slice.hasNext();
 
                 for (NewsArticle article : slice.getContent()) {
@@ -289,7 +289,7 @@ public class ExportService {
 
             do {
                 Pageable pageable = PageRequest.of(page++, 1000, sort);
-                Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
+                Slice<NewsArticle> slice = repository.findAll(spec, pageable);
                 hasNext = slice.hasNext();
 
                 for (NewsArticle article : slice.getContent()) {
@@ -322,7 +322,7 @@ public class ExportService {
 
             do {
                 Pageable pageable = PageRequest.of(page++, 1000, sort);
-                Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
+                Slice<NewsArticle> slice = repository.findAll(spec, pageable);
                 hasNext = slice.hasNext();
 
                 for (NewsArticle article : slice.getContent()) {

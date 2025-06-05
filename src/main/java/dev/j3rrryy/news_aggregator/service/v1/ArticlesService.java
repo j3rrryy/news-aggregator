@@ -14,8 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ArticlesService {
 
+    private final NewsArticleRepository repository;
     private final CacheManagerService cacheManagerService;
-    private final NewsArticleRepository newsArticleRepository;
 
     @Transactional(readOnly = true)
     @Cacheable(
@@ -24,9 +24,9 @@ public class ArticlesService {
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public ArticlesSummary getArticlesSummary() {
-        int newCount = newsArticleRepository.countByStatus(Status.NEW);
-        int activeCount = newsArticleRepository.countByStatus(Status.ACTIVE);
-        int deletedCount = newsArticleRepository.countByStatus(Status.DELETED);
+        int newCount = repository.countByStatus(Status.NEW);
+        int activeCount = repository.countByStatus(Status.ACTIVE);
+        int deletedCount = repository.countByStatus(Status.DELETED);
         int total = newCount + activeCount + deletedCount;
         return new ArticlesSummary(newCount, activeCount, deletedCount, total);
     }
@@ -35,20 +35,20 @@ public class ArticlesService {
     public ArticlesAffected markAsDeleted(MarkDeleted dto) {
         cacheManagerService.clearAllCaches();
         return new ArticlesAffected(
-                newsArticleRepository.markAsDeletedByPublishedAtBefore(dto.olderThan())
+                repository.markAsDeletedByPublishedAtBefore(dto.olderThan())
         );
     }
 
     @Transactional
     public ArticlesAffected deleteMarkedArticles() {
         cacheManagerService.clearAllCaches();
-        return new ArticlesAffected(newsArticleRepository.deleteAllMarkedAsDeleted());
+        return new ArticlesAffected(repository.deleteAllMarkedAsDeleted());
     }
 
     @Transactional
     public ArticlesAffected deleteAllArticles() {
         cacheManagerService.clearAllCaches();
-        return new ArticlesAffected(newsArticleRepository.deleteAllArticles());
+        return new ArticlesAffected(repository.deleteAllArticles());
     }
 
 }

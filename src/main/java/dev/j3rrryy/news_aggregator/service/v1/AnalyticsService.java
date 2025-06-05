@@ -23,7 +23,7 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class AnalyticsService {
 
-    private final NewsArticleRepository newsArticleRepository;
+    private final NewsArticleRepository repository;
 
     @Cacheable(
             value = "newsCategoryCounts",
@@ -31,7 +31,7 @@ public class AnalyticsService {
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public CategoryCounts getCategoryCounts() {
-        List<Object[]> counts = newsArticleRepository.countArticlesByCategory();
+        List<Object[]> counts = repository.countArticlesByCategory();
         Map<Category, Integer> categoryCounts = new HashMap<>();
 
         for (Object[] row : counts) {
@@ -55,7 +55,7 @@ public class AnalyticsService {
     )
     public List<KeywordFrequency> getTopFrequentKeywords(int limit) {
         Pageable pageable = PageRequest.of(0, limit);
-        return newsArticleRepository.findMostFrequentKeywords(pageable).stream()
+        return repository.findMostFrequentKeywords(pageable).stream()
                 .map(row -> new KeywordFrequency((String) row[0], ((Number) row[1]).intValue()))
                 .toList();
     }
@@ -66,7 +66,7 @@ public class AnalyticsService {
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public List<KeywordDateCount> getKeywordTrend(String keyword) {
-        return newsArticleRepository.findKeywordFrequencyOverTime(keyword).stream()
+        return repository.findKeywordFrequencyOverTime(keyword).stream()
                 .map(row -> {
                     LocalDate day = ((LocalDateTime) row[0]).toLocalDate();
                     int count = ((Number) row[1]).intValue();
@@ -83,7 +83,7 @@ public class AnalyticsService {
     public List<TrendingTopic> getTrendingTopics(LocalDateTime fromDate, LocalDateTime toDate, int limit) {
         if (fromDate.isAfter(toDate)) throw new FromDateAfterToDateException();
         LocalDateTime prevStart = fromDate.minus(Duration.between(fromDate, toDate));
-        return newsArticleRepository.findTopKeywordsInRange(fromDate, toDate, prevStart, limit).stream()
+        return repository.findTopKeywordsInRange(fromDate, toDate, prevStart, limit).stream()
                 .map(row -> new TrendingTopic(
                         (String) row[0],
                         ((Number) row[1]).intValue(),

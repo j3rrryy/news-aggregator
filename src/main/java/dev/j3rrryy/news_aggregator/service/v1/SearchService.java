@@ -33,7 +33,7 @@ import static dev.j3rrryy.news_aggregator.utils.SortResolver.resolveSort;
 public class SearchService {
 
     private final SearchMapper searchMapper;
-    private final NewsArticleRepository newsArticleRepository;
+    private final NewsArticleRepository repository;
 
     @Cacheable(
             value = "newsSearch",
@@ -70,7 +70,7 @@ public class SearchService {
 
         Sort sort = resolveSort(sortField, sortDirection);
         Pageable pageable = PageRequest.of(0, limit, sort);
-        Slice<NewsArticle> slice = newsArticleRepository.findAll(spec, pageable);
+        Slice<NewsArticle> slice = repository.findAll(spec, pageable);
 
         List<NewsArticleSummary> articleSummaries = slice.getContent().stream()
                 .map(searchMapper::toSummary)
@@ -90,7 +90,7 @@ public class SearchService {
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
     public NewsArticleFull getNewsArticle(UUID id) {
-        return newsArticleRepository.findById(id)
+        return repository.findById(id)
                 .map(searchMapper::toFull)
                 .orElseThrow(() -> new ArticleNotFoundException(id));
     }
