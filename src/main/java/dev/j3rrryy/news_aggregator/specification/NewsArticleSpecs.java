@@ -15,6 +15,10 @@ import java.util.UUID;
 
 public class NewsArticleSpecs {
 
+    private NewsArticleSpecs() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
     public static Specification<NewsArticle> filterAll(
             String query,
             LocalDateTime fromDate,

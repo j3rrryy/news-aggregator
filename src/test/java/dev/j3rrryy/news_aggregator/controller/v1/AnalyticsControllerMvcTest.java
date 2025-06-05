@@ -86,8 +86,8 @@ public class AnalyticsControllerMvcTest {
     @Test
     void getKeywordTrend() throws Exception {
         List<KeywordDateCount> response = List.of(
-                new KeywordDateCount(LocalDate.of(2025, 5, 1), 5),
-                new KeywordDateCount(LocalDate.of(2025, 2, 1), 7)
+                new KeywordDateCount(LocalDate.of(2025, 5, 7), 5),
+                new KeywordDateCount(LocalDate.of(2025, 5, 1), 7)
         );
         given(analyticsService.getKeywordTrend(anyString())).willReturn(response);
 
@@ -95,9 +95,9 @@ public class AnalyticsControllerMvcTest {
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$[0].date").value("2025-05-01"))
+                .andExpect(jsonPath("$[0].date").value("2025-05-07"))
                 .andExpect(jsonPath("$[0].count").value(5))
-                .andExpect(jsonPath("$[1].date").value("2025-02-01"))
+                .andExpect(jsonPath("$[1].date").value("2025-05-01"))
                 .andExpect(jsonPath("$[1].count").value(7));
     }
 
