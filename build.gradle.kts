@@ -64,8 +64,9 @@ tasks.jacocoTestReport {
     classDirectories.setFrom(
         files(classDirectories.files.map {
             fileTree(it) {
-                exclude("**/NewsAggregatorApplication.class")
                 exclude("**/*Dialect*.class")
+                exclude("**/*MapperImpl.class")
+                exclude("**/NewsAggregatorApplication.class")
             }
         })
     )
