@@ -9,8 +9,6 @@ import dev.j3rrryy.news_aggregator.exceptions.InvalidDurationFormatException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.time.Duration;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -103,27 +101,11 @@ public class DurationDeserializerTest {
     }
 
     @Test
-    void processUnitInvalidDurationThrows() throws Exception {
+    void processUnitInvalidDurationThrows() {
         DurationDeserializer deserializer = new DurationDeserializer();
-
-        Class<?> partsClass = Class.forName(
-                "dev.j3rrryy.news_aggregator.serializers.DurationDeserializer$DurationParts"
-        );
-        var constructor = partsClass.getDeclaredConstructor(Long.class, Long.class, Long.class);
-        constructor.setAccessible(true);
-        Object partsInstance = constructor.newInstance(null, null, null);
-
-        Method processUnit = DurationDeserializer.class.getDeclaredMethod(
-                "processUnit", long.class, String.class, partsClass, String.class);
-        processUnit.setAccessible(true);
-
-        assertThatThrownBy(() -> {
-            try {
-                processUnit.invoke(deserializer, 5L, "x", partsInstance, "5x");
-            } catch (InvocationTargetException e) {
-                throw e.getCause();
-            }
-        }).isInstanceOf(InvalidDurationFormatException.class)
+        var parts = new DurationDeserializer.DurationParts(null, null, null);
+        assertThatThrownBy(() -> deserializer.processUnit(5L, "x", parts, "5x"))
+                .isInstanceOf(InvalidDurationFormatException.class)
                 .hasMessageContaining("Unexpected unit: x in 5x");
     }
 

@@ -1,5 +1,6 @@
 package dev.j3rrryy.news_aggregator.parser.scheduler;
 
+import com.google.common.annotations.VisibleForTesting;
 import dev.j3rrryy.news_aggregator.exceptions.ParsingInProgressException;
 import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
 import dev.j3rrryy.news_aggregator.service.v1.ParserService;
@@ -21,7 +22,9 @@ public class ParsingScheduler {
     private final ParserService parserService;
     private final TaskScheduler taskScheduler;
     private final ParserProperties parserProperties;
-    private volatile ScheduledFuture<?> scheduledFuture;
+
+    @VisibleForTesting
+    volatile ScheduledFuture<?> scheduledFuture;
 
     @PostConstruct
     public void init() {
@@ -55,7 +58,8 @@ public class ParsingScheduler {
         parserProperties.setAutoParsingEnabled(false);
     }
 
-    private void autoParsing() {
+    @VisibleForTesting
+    void autoParsing() {
         try {
             parserService.startParsing();
         } catch (ParsingInProgressException e) {

@@ -3,6 +3,7 @@ package dev.j3rrryy.news_aggregator.serializers;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.google.common.annotations.VisibleForTesting;
 import dev.j3rrryy.news_aggregator.exceptions.IntervalIsZeroException;
 import dev.j3rrryy.news_aggregator.exceptions.InvalidDurationFormatException;
 import org.springframework.boot.jackson.JsonComponent;
@@ -45,7 +46,8 @@ public class DurationDeserializer extends JsonDeserializer<Duration> {
         return duration;
     }
 
-    private void processUnit(long number, String unit, DurationParts parts, String rawValue) {
+    @VisibleForTesting
+    void processUnit(long number, String unit, DurationParts parts, String rawValue) {
         switch (unit) {
             case "d" -> {
                 if (parts.days != null) throw new InvalidDurationFormatException("duplicate days in " + rawValue);
@@ -63,7 +65,8 @@ public class DurationDeserializer extends JsonDeserializer<Duration> {
         }
     }
 
-    private static class DurationParts {
+    @VisibleForTesting
+    static class DurationParts {
 
         Long days;
         Long hours;
