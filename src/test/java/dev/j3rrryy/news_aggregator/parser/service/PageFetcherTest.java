@@ -75,7 +75,6 @@ class PageFetcherTest {
         Callable<Document> loader = mock();
 
         when(parsingStatusManager.isStopRequested()).thenReturn(true);
-        lenient().doReturn(true).when(pageFetcher).isThreadInterrupted();
 
         Optional<Document> result = pageFetcher.downloadPage(loader, url, limiter);
 

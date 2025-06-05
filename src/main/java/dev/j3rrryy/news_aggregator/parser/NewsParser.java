@@ -1,5 +1,6 @@
 package dev.j3rrryy.news_aggregator.parser;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.RateLimiter;
 import dev.j3rrryy.news_aggregator.entity.NewsArticle;
 import dev.j3rrryy.news_aggregator.enums.Category;
@@ -139,7 +140,8 @@ public abstract class NewsParser {
         return pageFetcher.downloadPage(pageFetcher.fetchGet(url), url, rateLimiter);
     }
 
-    private List<NewsArticle> fetchAndParseArticles(
+    @VisibleForTesting
+    List<NewsArticle> fetchAndParseArticles(
             Set<String> articleUrls, Category category, LocalDateTime latestPublishedAt
     ) {
         List<CompletableFuture<Optional<NewsArticle>>> articleFutures = articleUrls.stream()
