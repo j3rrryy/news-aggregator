@@ -32,7 +32,7 @@ public class SearchControllerMvcTest {
 
     @Test
     void searchNews() throws Exception {
-        CursorPage<NewsArticleSummary> response = new CursorPage<>(
+        CursorPage response = new CursorPage(
                 List.of(
                         new NewsArticleSummary(
                                 UUID.randomUUID(),

@@ -100,15 +100,6 @@ public class DurationDeserializerTest {
                 .hasMessageContaining("xyz");
     }
 
-    @Test
-    void processUnitInvalidDurationThrows() {
-        DurationDeserializer deserializer = new DurationDeserializer();
-        var parts = new DurationDeserializer.DurationParts(null, null, null);
-        assertThatThrownBy(() -> deserializer.processUnit(5L, "x", parts, "5x"))
-                .isInstanceOf(InvalidDurationFormatException.class)
-                .hasMessageContaining("Unexpected unit: x in 5x");
-    }
-
     private record Wrapper(Duration duration) {
 
     }

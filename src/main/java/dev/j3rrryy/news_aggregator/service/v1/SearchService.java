@@ -45,7 +45,7 @@ public class SearchService {
                     "#sortField + '_' + #sortDirection + '_' + #cursor + '_' + #limit",
             condition = "!@parsingStatusManager.isParsingInProgress()"
     )
-    public CursorPage<NewsArticleSummary> searchNews(
+    public CursorPage searchNews(
             String query,
             LocalDateTime fromDate,
             LocalDateTime toDate,
@@ -81,7 +81,7 @@ public class SearchService {
             NewsArticleSummary last = articleSummaries.getLast();
             nextCursor = last.publishedAt() + "|" + last.id();
         }
-        return new CursorPage<>(articleSummaries, nextCursor);
+        return new CursorPage(articleSummaries, nextCursor);
     }
 
     @Cacheable(

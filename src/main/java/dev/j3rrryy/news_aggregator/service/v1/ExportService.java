@@ -11,6 +11,7 @@ import dev.j3rrryy.news_aggregator.exceptions.FromDateAfterToDateException;
 import dev.j3rrryy.news_aggregator.mapper.SearchMapper;
 import dev.j3rrryy.news_aggregator.repository.NewsArticleRepository;
 import dev.j3rrryy.news_aggregator.specification.NewsArticleSpecs;
+import dev.j3rrryy.news_aggregator.utils.Exporter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
@@ -26,9 +27,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static dev.j3rrryy.news_aggregator.utils.SortResolver.resolveSort;
 import static java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME;
@@ -177,6 +176,11 @@ public class ExportService {
 
     private final SearchMapper searchMapper;
     private final NewsArticleRepository repository;
+    private final Map<FileFormat, Exporter> formatMap = Map.of(
+            FileFormat.CSV, this::exportCsv,
+            FileFormat.JSON, this::exportJson,
+            FileFormat.HTML, this::exportHtml
+    );
 
     public void export(
             String query,
@@ -202,11 +206,8 @@ public class ExportService {
         );
         Sort sort = resolveSort(sortField, sortDirection);
 
-        switch (fileFormat) {
-            case CSV -> exportCsv(spec, sort, outputStream, includeContent);
-            case JSON -> exportJson(spec, sort, outputStream, includeContent);
-            case HTML -> exportHtml(spec, sort, outputStream, includeContent);
-        }
+        Exporter exporter = formatMap.get(fileFormat);
+        exporter.accept(spec, sort, outputStream, includeContent);
     }
 
     private void exportCsv(

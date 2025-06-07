@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.google.common.annotations.VisibleForTesting;
 import dev.j3rrryy.news_aggregator.exceptions.IntervalIsZeroException;
 import dev.j3rrryy.news_aggregator.exceptions.InvalidDurationFormatException;
+import org.apache.logging.log4j.util.TriConsumer;
 import org.springframework.boot.jackson.JsonComponent;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,6 +19,24 @@ import java.util.regex.Pattern;
 public class DurationDeserializer extends JsonDeserializer<Duration> {
 
     private static final Pattern durationPattern = Pattern.compile("(\\d+)([dhm])");
+    private static final Map<String, TriConsumer<DurationParts, Long, String>> unitHandlers =
+            Map.of(
+                    "d", (parts, value, rawValue) -> {
+                        if (parts.days != null)
+                            throw new InvalidDurationFormatException("duplicate days in " + rawValue);
+                        parts.days = value;
+                    },
+                    "h", (parts, value, rawValue) -> {
+                        if (parts.hours != null)
+                            throw new InvalidDurationFormatException("duplicate hours in " + rawValue);
+                        parts.hours = value;
+                    },
+                    "m", (parts, value, rawValue) -> {
+                        if (parts.minutes != null)
+                            throw new InvalidDurationFormatException("duplicate minutes in " + rawValue);
+                        parts.minutes = value;
+                    }
+            );
 
     @Override
     public Duration deserialize(JsonParser jsonParser, DeserializationContext context) throws IOException {
@@ -29,7 +49,8 @@ public class DurationDeserializer extends JsonDeserializer<Duration> {
         while (matcher.find()) {
             totalMatchedLength += matcher.end() - matcher.start();
             found = true;
-            processUnit(Long.parseLong(matcher.group(1)), matcher.group(2), parts, value);
+            TriConsumer<DurationParts, Long, String> handler = unitHandlers.get(matcher.group(2));
+            handler.accept(parts, Long.parseLong(matcher.group(1)), value);
         }
 
         if (!found || totalMatchedLength != value.length()) {
@@ -44,25 +65,6 @@ public class DurationDeserializer extends JsonDeserializer<Duration> {
             throw new IntervalIsZeroException();
         }
         return duration;
-    }
-
-    @VisibleForTesting
-    void processUnit(long number, String unit, DurationParts parts, String rawValue) {
-        switch (unit) {
-            case "d" -> {
-                if (parts.days != null) throw new InvalidDurationFormatException("duplicate days in " + rawValue);
-                parts.days = number;
-            }
-            case "h" -> {
-                if (parts.hours != null) throw new InvalidDurationFormatException("duplicate hours in " + rawValue);
-                parts.hours = number;
-            }
-            case "m" -> {
-                if (parts.minutes != null) throw new InvalidDurationFormatException("duplicate minutes in " + rawValue);
-                parts.minutes = number;
-            }
-            default -> throw new InvalidDurationFormatException("Unexpected unit: " + unit + " in " + rawValue);
-        }
     }
 
     @VisibleForTesting

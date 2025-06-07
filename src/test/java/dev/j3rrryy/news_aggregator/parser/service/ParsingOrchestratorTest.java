@@ -4,11 +4,11 @@ import dev.j3rrryy.news_aggregator.enums.Category;
 import dev.j3rrryy.news_aggregator.enums.Source;
 import dev.j3rrryy.news_aggregator.parser.NewsParser;
 import dev.j3rrryy.news_aggregator.parser.config.ParserProperties;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.EnumMap;
@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static org.mockito.Mockito.*;
 
+@ExtendWith(MockitoExtension.class)
 public class ParsingOrchestratorTest {
 
     @Mock
@@ -36,11 +37,6 @@ public class ParsingOrchestratorTest {
 
     @Mock
     private ParsingStatusManager parsingStatusManager;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     @Test
     void runAsyncParsing_shouldRunParsersWhenNotStoppedAndEnabled() {

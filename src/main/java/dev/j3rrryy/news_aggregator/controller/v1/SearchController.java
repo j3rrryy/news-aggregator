@@ -2,7 +2,6 @@ package dev.j3rrryy.news_aggregator.controller.v1;
 
 import dev.j3rrryy.news_aggregator.dto.response.CursorPage;
 import dev.j3rrryy.news_aggregator.dto.response.NewsArticleFull;
-import dev.j3rrryy.news_aggregator.dto.response.NewsArticleSummary;
 import dev.j3rrryy.news_aggregator.enums.*;
 import dev.j3rrryy.news_aggregator.service.v1.SearchService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -32,7 +31,7 @@ public class SearchController {
             @ApiResponse(responseCode = "200", description = "Search results"),
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
-    public CursorPage<NewsArticleSummary> searchNews(
+    public CursorPage searchNews(
             @RequestParam(required = false)
             String query,
 
