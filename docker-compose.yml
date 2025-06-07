@@ -58,4 +58,5 @@ services:
       - ./docker/redis.conf:/usr/local/etc/redis/redis.conf:ro
     networks:
       - main_network
+    command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
     container_name: redis_news_aggregator

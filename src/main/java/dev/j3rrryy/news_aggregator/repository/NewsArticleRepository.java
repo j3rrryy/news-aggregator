@@ -59,7 +59,7 @@ public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID>,
                 JOIN n.keywords k
                 WHERE LOWER(k) LIKE CONCAT('%', LOWER(:keyword), '%') AND n.status != 'DELETED'
                 GROUP BY day
-                ORDER BY day
+                ORDER BY day DESC
             """)
     List<Object[]> findKeywordFrequencyOverTime(@Param("keyword") String keyword);
 

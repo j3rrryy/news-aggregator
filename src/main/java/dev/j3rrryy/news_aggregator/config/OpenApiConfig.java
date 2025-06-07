@@ -7,6 +7,8 @@ import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -31,6 +33,22 @@ public class OpenApiConfig {
                         )
                 );
         return new OpenAPI().info(info).components(components);
+    }
+
+    @Bean
+    public OpenApiCustomizer removeOnlyDefault400() {
+        return openApi -> {
+            if (openApi.getPaths() == null) {
+                return;
+            }
+            openApi.getPaths().values().forEach(pathItem ->
+                    pathItem.readOperations().forEach(operation -> {
+                        ApiResponses responses = operation.getResponses();
+                        ApiResponse default400 = responses.get("400");
+                        if (default400 != null && default400.get$ref() == null) responses.remove("400");
+                    })
+            );
+        };
     }
 
 }
