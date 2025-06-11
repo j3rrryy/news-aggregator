@@ -35,7 +35,10 @@ public class AnalyticsController {
             @ApiResponse(responseCode = "400", ref = "ValidationFailed")
     })
     public List<KeywordFrequency> getTopFrequentKeywords(
-            @RequestParam(defaultValue = "10") @Positive(message = "Limit must be > 0") int limit
+            @RequestParam(defaultValue = "10")
+            @Positive(message = "Limit must be > 0")
+            @Max(value = 250, message = "Limit must be ≤ 250")
+            int limit
     ) {
         return analyticsService.getTopFrequentKeywords(limit);
     }
