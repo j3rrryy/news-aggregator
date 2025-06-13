@@ -1,6 +1,12 @@
 # News Aggregator
 
 <p align="center">
+  <a href="https://github.com/j3rrryy/news-aggregator/actions/workflows/main.yml">
+    <img src="https://github.com/j3rrryy/news-aggregator/actions/workflows/main.yml/badge.svg" alt="СI/CD">
+  </a>
+  <a href="https://codecov.io/gh/j3rrryy/news-aggregator">
+    <img src="https://codecov.io/gh/j3rrryy/news-aggregator/graph/badge.svg?token=7EOHJU2CCO" alt="Codecov">
+  </a>
   <a href="https://www.oracle.com/java/technologies/downloads/#java21">
     <img src="https://img.shields.io/badge/Java-21-FFD64E.svg" alt="Java 21">
   </a>
